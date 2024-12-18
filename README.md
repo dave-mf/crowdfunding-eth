@@ -16,7 +16,7 @@ Our crowdfunding DApp enables project creators to raise capital directly from a 
 Kindly follow the following Instructions to run the project in your system and install the necessary requirements
 
 
-- [Final Source Code](https://www.theblockchaincoders.com/sourceCode/crowd-funding-marketplace-project-source-code)
+- [This is The Final Source Code]
 
 #### Setup Video
 - [Final Code Setup video](https://youtu.be/DKWqBqZDh74?si=7CUfjABG3zxRC4dt)
@@ -99,18 +99,3 @@ We are using RemixID for deploying the contract and generation of the ABI in the
 ```https://mumbai.polygonscan.com/
   OPEN: Polygon Mumbai
 ```
-
-## Important Links
-
-- [Get Pro Blockchain Developer Course](https://www.theblockchaincoders.com/pro-nft-marketplace)
-- [Support Creator](https://bit.ly/Support-Creator)
-- [All Projects Source Code](https://www.theblockchaincoders.com/SourceCode)
-
-
-## Authors
-
-- [@theblockchaincoders.com](https://www.theblockchaincoders.com/)
-- [@consultancy](https://www.theblockchaincoders.com/consultancy)
-- [@youtube](https://www.youtube.com/@daulathussain)
-
-
