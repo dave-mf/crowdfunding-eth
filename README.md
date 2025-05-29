@@ -6,16 +6,16 @@ A decentralized crowdfunding platform built with Next.js, Hardhat, and Tailwind 
 
 - **Smart Contract Integration**: Deploy and interact with crowdfunding campaigns using Ethereum smart contracts
 - **Multiple Contract Versions**: Support for different contract implementations:
-  - Original Contract
-  - Optimized Contract
-  - Variable Packing Contract
-  - Batch Processing Contract
+  - Original Contract: Base implementation with standard gas usage
+  - Optimized Contract: Improved gas efficiency through code optimization
+  - Variable Packing Contract: Uses Solidity's variable packing for maximum gas savings
+  - Batch Processing Contract: Supports efficient batch donations with reduced gas costs
 - **Gas Fee Analytics**: Comprehensive gas fee tracking and analysis:
   - Real-time gas fee monitoring
   - Performance comparison between contract versions
   - Detailed transaction history
   - Savings calculation
-  - USD value conversion
+  - USD value conversion using Binance API
 - **Campaign Management**:
   - Create new campaigns
   - Set funding goals and deadlines
@@ -50,6 +50,9 @@ A decentralized crowdfunding platform built with Next.js, Hardhat, and Tailwind 
   - TypeScript
   - ESLint
   - Prettier
+- **APIs**:
+  - Binance API for ETH price data
+  - Etherscan for transaction verification
 
 ## Getting Started
 
@@ -100,6 +103,8 @@ The project uses PostgreSQL for storing gas fee logs and campaign data. The data
   - Transaction methods
   - Timestamps
   - Success status
+  - Donation amounts
+  - Donator addresses
 
 To manage the database:
 
@@ -129,10 +134,25 @@ To manage the database:
 
 The platform supports multiple contract implementations for gas optimization:
 
-1. **Original Contract**: Base implementation
+1. **Original Contract**: Base implementation with standard gas usage
+   - Standard variable declarations
+   - Basic function implementations
+   - No specific optimizations
+
 2. **Optimized Contract**: Gas-optimized version
-3. **Variable Packing**: Uses Solidity's variable packing for gas savings
-4. **Batch Processing**: Supports batch operations for multiple donations
+   - Reduced storage operations
+   - Optimized function parameters
+   - Efficient data structures
+
+3. **Variable Packing Contract**: Uses Solidity's variable packing for gas savings
+   - Packed structs for related data
+   - Optimized storage layout
+   - Reduced storage slots usage
+
+4. **Batch Processing Contract**: Supports batch operations for multiple donations
+   - Single transaction for multiple donations
+   - Reduced gas costs per donation
+   - Efficient event logging
 
 ## Gas Fee Analytics
 
@@ -143,13 +163,14 @@ The platform includes a comprehensive gas fee analytics system:
 - **Performance Metrics**:
   - Average gas fees
   - Total gas consumption
-  - USD value conversion
+  - USD value conversion using Binance API
   - Savings percentage
 - **Transaction History**:
   - Detailed transaction logs
   - Method tracking
   - Campaign association
   - Success/failure status
+  - Donation amounts and addresses
 
 ## Contributing
 
@@ -168,3 +189,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - OpenZeppelin for smart contract libraries
 - Tailwind CSS for the UI framework
 - Next.js team for the amazing framework
+- Binance for providing reliable ETH price data
