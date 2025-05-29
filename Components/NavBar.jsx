@@ -1,93 +1,123 @@
-import React, { useState, useContext } from "react";
-
-//INTERNAL IMPORT
-import { CrowdFundingContext } from "../Context/CrowdFunding";
-import { Logo, Menu } from "../Components/index";
+import React, { useContext, useState } from "react";
+import { useRouter } from "next/router";
+import { MultiContractContext } from "../Context/MultiContractContext";
+import Link from "next/link";
 
 const NavBar = () => {
-  const { currentAccount, connectWallet } = useContext(CrowdFundingContext);
+  const { currentAccount, connectWallet, disconnectWallet } = useContext(MultiContractContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const router = useRouter();
 
-  const menuList = ["White Paper", "Project", "Donation", "Members"];
-  return(
-    <div class="backgroundMain">
-      <div class="px-4 py-5 mx-auto sm:max-w-xl md:max-w-full lg:max-w-screen-xl md:px-24 lg:px-8">
-        <div class="relative flex items-center justify-between">
-          <div class="flex items-center">
-            <a href="/" aria-label="Company" title="Company" class="inline-flex items-center mr-8">
-              <Logo color="text-white"/>
-              <span class="ml-2 text-xl font-bold tracking-wide text-gray-100 uppercase">
-                Company
-              </span>
-            </a>
-            <ul class="flex items-center hidden space-x-8 lg:flex">
-              {menuList.map((el, i) => (
-                <li key={i + 1}>
-                  <a href="/" aria-label="Our Product" title="Our Product" class="font-medium tracking-wide text-gray-100 transition-colors duration-200 hover:text-teal-accent-400">
-                    {el}
-                  </a>
-                </li>
-              ))}
-            </ul>
-          </div>
-          {!currentAccount && (
-            <ul class="flex items-center hidden space-x-8 lg:flex">
-              <li>
-                <button onClick={() => connectWallet()} class="inline-flex items-center justify-center h-12 px-6 font-medium tracking-wide text-white transition duration-200 rounded shadow-md bg-deep-purple-accent-400 hover:bg-deep-purple-accent-700 focus:shadow-outline focus:outline-none background" aria-label="Sign Up" title="Sign Up">
-                  Connect Wallet
-                </button>
-              </li>
-            </ul>
-          )}
+  const menuList = [
+    { name: "Optimized", path: "/" },
+    { name: "Original", path: "/original" },
+    { name: "Variable Packing", path: "/variable-packing" },
+    { name: "Batch Processing", path: "/batch-processing" },
+    { name: "About", path: "/about" },
+    { name: "Gas Stats", path: "/gas-stats" }
+  ];
 
-          <div class="lg:hidden z-40">
-            <button aria-label="Open Menu" title="Open Menu" class="p-2 -mr-1 transition duration-200 rounded focus:outline-none focus:shadow-outline" onClick={() => setIsMenuOpen(true)}>
-              <Menu />
+  return (
+    <nav className="bg-nav-dark text-white py-4 px-6 shadow-md">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between">
+          {/* Left side - Logo/Toggle */}
+          <div className="flex items-center space-x-4">
+            <button 
+              className="lg:hidden text-white focus:outline-none"
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
             </button>
-            {isMenuOpen && (
-              <div class="absolute top-0 left-0 w-full">
-                <div class="p-5 bg-white border rounded shadow-sm">
-                  <div class="flex items-center justify-between mb-4">
-                    <div>
-                      <a href="/" aria-label="Company" title="Company" class="inline-flex items-center">
-                        <Logo color="text-black" />
-                        <span class="ml-2 text-xl font-bold tracking-wide text-gray-800 uppercase">
-                          Company
-                        </span>
-                      </a>
-                    </div>
-                    <div>
-                      <button aria-label="Close Menu" title="Close Menu" class="p-2 -mt-2 -mr-2 transition duration-200 rounded hover:bg-gray-200 focus:bg-gray-200 focus:outline-none docus:shadow-outline" onClick={() => setIsMenuOpen(false)}>
-                        <svg class="w-5 text-gray-600" viewBox="0 0 24 24">
-                        <path fill="currentColor" d="M19.7,4.3c-0.4-0.4-1-0.4-1.4,0L12,10.6L5.7,4.3c-0.4-0.4-1-0.4-1.4,0c-0.4,0.4-0.4,1,0,1.4L10.6,12l-6.3,6.3c-0.4,0.4-0.4,1,0,1.4c0.2,0.2,0.5,0.3,0.7,0.3c0.3,0,0.5-0.1,0.7-0.3L12,13.4l6.3,6.3c0.2,0.2,0.5,0.3,0.7,0.3c0.3,0,0.5-0.1,0.7-0.3c0.4-0.4,0.4-1,0-1.4L13.4,12l6.3-6.3C20.1,5.3,20.1,4.7,19.7,4.3z"/>
-                      
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                  <nav>
-                    <ul class="space-y-4">
-                      {menuList.map((el, i) => (
-                        <li key={i + 1}>
-                          <a href="/" aria-label="Our Product" title="Our Product" class="font-medium tracking-wide text-gray-700 transition-colors duration-200 hover:text-deep-purple-accent-400">
-                            {el}
-                          </a>
-                        </li>
-                      ))}
-                      <li>
-                        <a href="/" class="inline-flex items-center background justify-center w-full h-12 px-6 font-medium tracking-wide text-white transition duration-200 rounded shadow-md bg-deep-purple-accent-400 hover:bg-deep-purple-accent-700 focus:shadow-outline focus:outline-none" aria-label="Sign Up" title="Sign Up">
-                          Connect Wallet
-                        </a>
-                      </li>
-                    </ul>
-                  </nav>
-                </div>
+            <Link href="/" className="text-xl font-semibold">
+              CRFund
+            </Link>
+          </div>
+
+          {/* Center/Right - Navigation Links AND Wallet Info (Desktop) */}
+          <div className="hidden lg:flex space-x-8 items-center">
+            {menuList.map((item, index) => {
+              const isActive = router.pathname === item.path;
+              return (
+                <Link 
+                  key={index} 
+                  href={item.path}
+                  className={`px-3 py-2 rounded-md text-sm font-medium ${isActive ? "bg-black text-white" : "text-gray-300 hover:text-white hover:bg-black"}`}
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
+            
+            {/* Wallet Info and Button - Dipindah ke sini */}
+            {!currentAccount ? (
+              <button
+                onClick={connectWallet}
+                className="px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none"
+              >
+                Connect Wallet
+              </button>
+            ) : (
+              <div className="flex items-center space-x-2 text-gray-300">
+                <span className="text-sm">
+                  {currentAccount.slice(0, 6)}...{currentAccount.slice(-4)}
+                </span>
+                <button
+                  onClick={disconnectWallet}
+                  className="px-3 py-1 rounded-md text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none"
+                >
+                  Disconnect
+                </button>
               </div>
             )}
           </div>
+
+          {/* Mobile menu */}
+          {isMenuOpen && (
+            <div className="lg:hidden absolute top-16 left-0 right-0 bg-black z-50">
+              <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                {menuList.map((item, index) => {
+                  const isActive = router.pathname === item.path;
+                  return (
+                    <Link
+                      key={index}
+                      href={item.path}
+                      className={`block px-3 py-2 rounded-md text-base font-medium ${isActive ? "bg-gray-500 text-white" : "text-gray-300 hover:text-white hover:bg-gray-700"}`}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
+                {/* Opsi connect/disconnect di mobile menu */}
+                {!currentAccount ? (
+                  <button
+                    onClick={connectWallet}
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-blue-600 hover:bg-blue-700"
+                  >
+                    Connect Wallet
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="px-3 py-2 text-gray-300">
+                      {currentAccount.slice(0, 6)}...{currentAccount.slice(-4)}
+                    </div>
+                  <button
+                    onClick={disconnectWallet}
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-white bg-red-600 hover:bg-red-700"
+                  >
+                    Disconnect
+                  </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </nav>
   );
 };
+
 export default NavBar;
