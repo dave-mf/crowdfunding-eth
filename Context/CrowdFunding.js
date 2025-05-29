@@ -5,6 +5,9 @@ import { ethers } from "ethers";
 //INTERNAL IMPORT
 import { CrowdFundingABI, CrowdFundingAddress } from "./contants";
 
+console.log("Address:", CrowdFundingAddress);
+console.log("ABI:", CrowdFundingABI);
+
 //---FETCHING SMART CONTRACT
 const fetchContract = (signerOrProvider) =>
     new ethers.Contract(CrowdFundingAddress, CrowdFundingABI, signerOrProvider);
@@ -14,6 +17,22 @@ export const CrowdFundingContext = React.createContext();
 export const CrowdfundingProvider = ({ children }) => {
     const titleData = "Crowd Funding Contract";
     const [currentAccount, setCurrentAccount] = useState("");
+
+    //Check Dynamic Wallet Address
+    const getAddress = async () => {
+        try {
+            if (!window.ethereum) 
+                return setOpenError(true), setError("Install MetaMask");
+            
+            const accounts = await window.ethereum.request({
+                method: "eth_accounts",
+            });
+
+            return accounts[0]
+        } catch (error) {
+            console.log("Something wrong while connecting to wallet!");
+        }
+    };
 
     const createCampaign = async (campaign) => {
         const { title, description, amount, deadline } = campaign;
@@ -42,7 +61,10 @@ export const CrowdfundingProvider = ({ children }) => {
     };
 
     const getCampaigns = async () => {
-        const provider = new ethers.providers.JsonRpcBatchProvider();
+        // const provider = new ethers.providers.JsonRpcBatchProvider("https://rpc.ankr.com/eth_sepolia");
+        const web3Modal = new Wenb3Modal();
+        const connection = await web3Modal.connect();
+        const provider = new ethers.providers.Web3Provider(connection);
         const contract = fetchContract(provider);
 
         const campaigns = await contract.getCampaigns();
@@ -62,8 +84,13 @@ export const CrowdfundingProvider = ({ children }) => {
         return parsedCampaigns;
     };
 
+
+
     const getUserCampaigns = async () => {
-        const provider = new ethers.providers.JsonRpcProvider();
+        // const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/eth_sepolia");
+        const web3Modal = new Wenb3Modal();
+        const connection = await web3Modal.connect();
+        const provider = new ethers.providers.Web3Provider(connection);
         const contract = fetchContract(provider);
 
         const allCampaigns = await contract.getCampaigns();
@@ -73,10 +100,13 @@ export const CrowdfundingProvider = ({ children }) => {
         });
         const currentUser = accounts[0];
 
+        const address = await getAddress();
+
         const filteredCampaigns = allCampaigns.filter(
             (campaign) =>
-                campaign.owner === "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
+                campaign.owner.toLowerCase() === address.toLowerCase()
         );
+        
 
         const userData = filteredCampaigns.map((campaign, i) => ({
             owner: campaign.owner,
@@ -92,6 +122,7 @@ export const CrowdfundingProvider = ({ children }) => {
 
         return userData;
     };
+
 
     const donate = async (pId, amount) => {
         const web3Modal = new Wenb3Modal();
@@ -111,7 +142,11 @@ export const CrowdfundingProvider = ({ children }) => {
     };
 
     const getDonations = async (pId) => {
-        const provider = new ethers.providers.JsonRpcProvider();
+        // const provider = new ethers.providers.JsonRpcProvider("https://rpc.ankr.com/eth_sepolia");
+        const web3Modal = new Wenb3Modal();
+        const connection = await web3Modal.connect();
+        const provider = new ethers.providers.Web3Provider(connection)
+
         const contract = fetchContract(provider);
 
         const donations = await contract.getDonators(pId);

@@ -1,39 +1,59 @@
 import React from "react";
 
 const Card = ({ allcampaign, setOpenModel, setDonate, title }) => {
-  console.log(allcampaign);
-
   const daysLeft = (deadline) => {
     const difference = new Date(deadline).getTime() - Date.now();
     const remainingDays = difference / (1000 * 3600 * 24);
     return remainingDays.toFixed(0);
   };
 
+  const isCampaignActive = (deadline) => {
+    return new Date(deadline).getTime() > Date.now();
+  };
+
+  const activeCampaigns = allcampaign?.filter((campaign) =>
+    isCampaignActive(campaign.deadline)
+  );
+
   return (
-    <div className="px-4 py-16 mx-auto sm:max-w-xl md:max-w-full lg:max-w-screen-xl md:px-24 lg:px-8 lg:py-20">
-      <p className="py-16 text-exl font-bold leading-5"> {title} </p>
-      <div className="grid gap-5 lg:grid-cols-3 sm:max-w-sm sm:mx-auto lg:max-w-full">
-        {allcampaign?.map((campaign, i) => (
-          <div onClick={() => (setDonate(campaign), setOpenModel(true))} key={i + 1} className="cursor-pointer border overflow-hidden transition-shadow duration-300 bg-white rounded" >
-            <img src="https://images.pexels.com/photos/29254310/pexels-photo-29254310.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1" alt="" />
-            <div className="py-5 pl-2">
-              <p className="mb-2 text-xs font-semibold text-gray-600 uppercase">
+    <div className="px-4 py-12 mx-auto max-w-screen-xl">
+      <h2 className="text-2xl font-semibold mb-8">{title}</h2>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {activeCampaigns?.map((campaign, i) => {
+          const isFundingComplete =
+            parseFloat(campaign.amountCollected) >= parseFloat(campaign.target);
+
+          return (
+            <div
+              key={i + 1}
+              onClick={() =>
+                !isFundingComplete && (setDonate(campaign), setOpenModel(true))
+              }
+              className={`cursor-pointer bg-white border shadow-sm rounded-2xl p-4 transition duration-300 hover:shadow-md ${
+                isFundingComplete ? "pointer-events-none opacity-90" : ""
+              }`}
+            >
+              {isFundingComplete && (
+                <span className="bg-green-500 text-white text-xs font-semibold px-3 py-1 rounded-full mb-3 inline-block">
+                  Crowdfunding Berhasil 🎉
+                </span>
+              )}
+              <p className="text-sm text-gray-500 mb-1">
                 Days Left : {daysLeft(campaign.deadline)}
               </p>
-              <a href="/" aria-label="Article" className="inline-block mb-3 text-black transition-colors duration-200 hover:text-deep-purple-accent-700">
-                <p className="text-3xl font-bold leading-5">{campaign.title}</p>
-              </a>
-              <p className="mb-4 text-gray-700">{campaign.description}</p>
-              <div className="flex space-x-4">
-                <p className="font-semibold">Target : {campaign.target} ETH</p>
-
-                <p className="font-semibold">
-                  Raised : {campaign.amountCollected} ETH
-                </p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">
+                {campaign.title}
+              </h3>
+              <p className="text-sm text-gray-700 mb-4 line-clamp-3">
+                {campaign.description}
+              </p>
+              <div className="flex justify-between text-sm font-medium text-gray-800">
+                <p>Target: {campaign.target} ETH</p>
+                <p>Raised: {campaign.amountCollected} ETH</p>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

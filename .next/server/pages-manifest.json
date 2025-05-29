@@ -2,5 +2,7 @@
   "/_app": "pages/_app.js",
   "/_error": "pages/_error.js",
   "/_document": "pages/_document.js",
-  "/": "pages/index.js"
+  "/gas-stats": "pages/gas-stats.js",
+  "/original": "pages/original.js",
+  "/api/gas-fee": "pages/api/gas-fee.js"
 }

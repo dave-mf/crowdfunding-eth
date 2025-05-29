@@ -1,116 +1,170 @@
+# Crowdfunding Platform
 
-# Decentralized Funding: Building and Deploying a Blockchain Crowdfunding DApp
+A decentralized crowdfunding platform built with Next.js, Hardhat, and Tailwind CSS. This platform allows users to create and participate in crowdfunding campaigns using smart contracts.
 
-Building and Deploying a Blockchain Supply Chain Management DApp
+## Features
 
-Revolutionize the way projects and ideas are funded with our blockchain crowdfunding DApp. This innovative platform leverages the power of blockchain technology to create a decentralized, transparent, and secure environment for fundraising.
+- **Smart Contract Integration**: Deploy and interact with crowdfunding campaigns using Ethereum smart contracts
+- **Multiple Contract Versions**: Support for different contract implementations:
+  - Original Contract
+  - Optimized Contract
+  - Variable Packing Contract
+  - Batch Processing Contract
+- **Gas Fee Analytics**: Comprehensive gas fee tracking and analysis:
+  - Real-time gas fee monitoring
+  - Performance comparison between contract versions
+  - Detailed transaction history
+  - Savings calculation
+  - USD value conversion
+- **Campaign Management**:
+  - Create new campaigns
+  - Set funding goals and deadlines
+  - Track campaign progress
+  - View campaign details
+- **User Features**:
+  - Connect MetaMask wallet
+  - Make donations
+  - View transaction history
+  - Track gas fees
+- **Modern UI/UX**:
+  - Responsive design
+  - Interactive dashboards
+  - Real-time updates
+  - Beautiful statistics visualization
 
-Our crowdfunding DApp enables project creators to raise capital directly from a global pool of investors without the need for intermediaries. By utilizing smart contracts, the DApp automates the fundraising process, ensuring that funds are released to project creators only when predefined milestones are met, thereby increasing accountability and reducing the risk of fraud
+## Tech Stack
 
-## Project Overview
+- **Frontend**:
+  - Next.js
+  - Tailwind CSS
+  - React
+  - Ethers.js
+- **Smart Contracts**:
+  - Solidity
+  - Hardhat
+  - OpenZeppelin
+- **Database**:
+  - PostgreSQL
+  - Prisma ORM
+- **Development Tools**:
+  - TypeScript
+  - ESLint
+  - Prettier
 
-![alt text](https://www.daulathussain.com/wp-content/uploads/2023/04/crowd-funding-marketplace.jpg)
+## Getting Started
 
-## Instruction
+### Prerequisites
 
-Kindly follow the following Instructions to run the project in your system and install the necessary requirements
+- Node.js (v14 or higher)
+- PostgreSQL
+- MetaMask browser extension
 
+### Installation
 
-- [Final Source Code](https://www.theblockchaincoders.com/sourceCode/crowd-funding-marketplace-project-source-code)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/crowdfunding.git
+   cd crowdfunding
+   ```
 
-#### Setup Video
-- [Final Code Setup video](https://youtu.be/DKWqBqZDh74?si=7CUfjABG3zxRC4dt)
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-```https://code.visualstudio.com/download
-  WATCH: Setup & Demo Of Project
-```
+3. Set up environment variables:
+   Create a `.env` file in the root directory with the following variables:
+   ```
+   DATABASE_URL="postgresql://username:password@localhost:5432/crowdfunding"
+   NEXT_PUBLIC_RPC_URL="your_ethereum_rpc_url"
+   ```
 
+4. Initialize the database:
+   ```bash
+   npm run init-db
+   ```
 
-#### Install Vs Code Editor
+5. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-```https://code.visualstudio.com/download
-  GET: VsCode Editor
-```
+### Database Management
 
-#### NodeJs & NPM Version
+The project uses PostgreSQL for storing gas fee logs and campaign data. The database schema includes:
 
-```https://nodejs.org/en/download
-  NodeJs: v18.12.1
-  NPM: 8.19.2
-```
+- `gas_fee_logs`: Stores transaction data including:
+  - Gas fees
+  - Contract versions
+  - Campaign information
+  - Transaction methods
+  - Timestamps
+  - Success status
 
-#### Clone Starter File
+To manage the database:
 
-```https://github.com/daulathussain/Airdrop-Crypto-Starter-File
-  GET: Project Starter File Download
-```
+1. Start PostgreSQL:
+   ```bash
+   brew services start postgresql
+   ```
 
+2. Create the database:
+   ```bash
+   createdb crowdfunding
+   ```
 
-All you need to follow the complete project and follow the instructions which are explained in the tutorial by Daulat
+3. Initialize the database:
+   ```bash
+   npm run init-db
+   ```
 
-## Final Code Instruction
+4. To reset the database:
+   ```bash
+   dropdb crowdfunding
+   createdb crowdfunding
+   npm run init-db
+   ```
 
-If you download the final source code then you can follow the following instructions to run the Dapp successfully
+## Smart Contract Versions
 
-#### Setup Video
+The platform supports multiple contract implementations for gas optimization:
 
-```https://code.visualstudio.com/download
-  WATCH: Setup & Demo Of Project
-```
+1. **Original Contract**: Base implementation
+2. **Optimized Contract**: Gas-optimized version
+3. **Variable Packing**: Uses Solidity's variable packing for gas savings
+4. **Batch Processing**: Supports batch operations for multiple donations
 
-#### Final Source Code
+## Gas Fee Analytics
 
-```https://www.theblockchaincoders.com/SourceCode
-  Download the Final Source Code
-```
+The platform includes a comprehensive gas fee analytics system:
 
-#### Install Vs Code Editor
+- **Real-time Monitoring**: Track gas fees for all transactions
+- **Version Comparison**: Compare gas usage across different contract versions
+- **Performance Metrics**:
+  - Average gas fees
+  - Total gas consumption
+  - USD value conversion
+  - Savings percentage
+- **Transaction History**:
+  - Detailed transaction logs
+  - Method tracking
+  - Campaign association
+  - Success/failure status
 
-```https://code.visualstudio.com/download
-  GET: VsCode Editor
-```
+## Contributing
 
-#### NodeJs & NPM Version
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-```https://nodejs.org/en/download
-  NodeJs: v18.12.1
-  NPM: 8.19.2
-```
+## License
 
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-#### Test Faucets
+## Acknowledgments
 
-Alchemy will provide you with some free test faucets which you can transfer to your wallet address for deploying the contract
-
-```https://www.alchemy.com/faucets
-  Get: Free Test Faucets
-```
-
-#### RemixID
-
-We are using RemixID for deploying the contract and generation of the ABI in the project, but you can use any other tools like Hardhat, etc.
-
-```https://remix-project.org
-  OPEN: RemixID
-```
-
-#### Polygon Mumbai
-
-```https://mumbai.polygonscan.com/
-  OPEN: Polygon Mumbai
-```
-
-## Important Links
-
-- [Get Pro Blockchain Developer Course](https://www.theblockchaincoders.com/pro-nft-marketplace)
-- [Support Creator](https://bit.ly/Support-Creator)
-- [All Projects Source Code](https://www.theblockchaincoders.com/SourceCode)
-
-
-## Authors
-
-- [@theblockchaincoders.com](https://www.theblockchaincoders.com/)
-- [@consultancy](https://www.theblockchaincoders.com/consultancy)
-- [@youtube](https://www.youtube.com/@daulathussain)
-
-
+- OpenZeppelin for smart contract libraries
+- Tailwind CSS for the UI framework
+- Next.js team for the amazing framework

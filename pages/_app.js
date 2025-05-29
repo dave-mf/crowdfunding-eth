@@ -1,17 +1,22 @@
 import "../styles/globals.css";
+import { Urbanist } from "next/font/google";
 
 //interal import
 import { NavBar, Footer } from "../Components";
-import {CrowdfundingProvider} from '../Context/CrowdFunding';
+import { MultiContractProvider } from '../Context/MultiContractContext';
+
+const urbanist = Urbanist({ subsets: ['latin'] });
 
 export default function App({ Component, pageProps }) {
   return (
     <>
-      <CrowdfundingProvider>
-        <NavBar/>
-        <Component {...pageProps} />
-        <Footer/>
-      </CrowdfundingProvider>
+      <MultiContractProvider>
+        <main className={urbanist.className}>
+          <NavBar/>
+          <Component {...pageProps} />
+          <Footer/>
+        </main>
+      </MultiContractProvider>
     </>
   );
 }
