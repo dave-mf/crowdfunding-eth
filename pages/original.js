@@ -1,11 +1,11 @@
 import React, { useEffect, useContext, useState } from "react";
+
+//INTERNAL IMPORT
 import { MultiContractContext } from "../Context/MultiContractContext";
 import { Hero, Card, PupUp } from "../Components";
-import BatchDonate from "../components/BatchDonate";
-import Link from "next/link";
 import { getEthPrice } from "../utils/ethPrice";
 
-const BatchProcessing = () => {
+const Original = () => {
   const {
     titleData,
     getCampaigns,
@@ -24,14 +24,14 @@ const BatchProcessing = () => {
   const [usercampaign, setUsercampaign] = useState();
   const [ethPrice, setEthPrice] = useState(2500);
 
-  // Set contract type to batch-processing (hanya sekali saat mount)
+  // Set contract type to original (hanya sekali saat mount)
   useEffect(() => {
-    switchContract("batch-processing");
+    switchContract("original");
   }, []);
 
   // Fetch data hanya jika activeContract sudah benar ATAU campaignsUpdatedFlag berubah
   useEffect(() => {
-    if (activeContract === "batch-processing") {
+    if (activeContract === "original") {
       setAllcampaign(undefined);
       setUsercampaign(undefined);
       const fetchData = async () => {
@@ -43,6 +43,10 @@ const BatchProcessing = () => {
       fetchData();
     }
   }, [activeContract, campaignsUpdatedFlag]);
+
+  useEffect(() => {
+    fetchEthPrice();
+  }, []);
 
   //DONATE POPUP MODEL
   const [openModel, setOpenModel] = useState(false);
@@ -58,62 +62,46 @@ const BatchProcessing = () => {
     }
   };
 
-  useEffect(() => {
-    fetchEthPrice();
-  }, []);
-
   return (
-    <div className="min-h-screen">
-      {/* Main Content */}
-      <div className="w-full">
-        <Hero titleData={titleData} createCampaign={createCampaign} />
+    <>
+      <Hero titleData={titleData} createCampaign={createCampaign} />
 
-        <div className="mt-8">
-          {!allcampaign ? (
-            <div className="text-center py-8 text-gray-500">Loading campaigns...</div>
-          ) : (
-            <Card 
-              title="All Listed Campaign" 
-              allcampaign={allcampaign} 
-              setOpenModel={setOpenModel} 
-              setDonate={setDonateCampaign} 
-            />
-          )}
-          {!usercampaign ? (
-            <div className="text-center py-8 text-gray-400">Loading your campaigns...</div>
-          ) : (
-            <Card 
-              title="Your Created Campaign" 
-              allcampaign={usercampaign} 
-              setOpenModel={setOpenModel} 
-              setDonate={setDonateCampaign} 
-            />
-          )}
-        </div>
-
-        {/* Batch Donate Section */}
-        <div className="mt-8 px-20">
-          <BatchDonate />
-        </div>
+      <div className="mt-8">
+        {!allcampaign ? (
+          <div className="text-center py-8 text-gray-500">Loading campaigns...</div>
+        ) : (
+          <Card 
+            title="All Listed Campaign" 
+            allcampaign={allcampaign} 
+            setOpenModel={setOpenModel} 
+            setDonate={setDonateCampaign} 
+          />
+        )}
+        {!usercampaign ? (
+          <div className="text-center py-8 text-gray-400">Loading your campaigns...</div>
+        ) : (
+          <Card 
+            title="Your Created Campaign" 
+            allcampaign={usercampaign} 
+            setOpenModel={setOpenModel} 
+            setDonate={setDonateCampaign} 
+          />
+        )}
       </div>
-
-      {/* Donation Popup */}
+      
       {openModel && (
         <PupUp 
           setOpenModel={setOpenModel} 
           getDonations={getDonations} 
-          donate={{
-            ...donateCampaign,
-            contractVersion: 'batch-processing'
-          }} 
+          donate={{...donateCampaign, contractVersion: 'original'}} 
           donateFunction={donate}
           getCampaigns={getCampaigns}
           getCurrentContract={getCurrentContract}
           getEthPrice={getEthPrice}
         />
       )}
-    </div>
+    </>
   );
 };
 
-export default BatchProcessing; 
+export default Original; 

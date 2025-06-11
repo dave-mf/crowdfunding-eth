@@ -1,9 +1,6 @@
-import React, { useState, useContext } from "react";
-import { MultiContractContext } from "../Context/MultiContractContext";
+import React, { useState } from "react";
 
 const Hero = ({ createCampaign }) => {
-  const { showNotification } = useContext(MultiContractContext);
-
   const [campaign, setCampaign] = useState({
     title: "",
     description: "",
@@ -17,7 +14,6 @@ const Hero = ({ createCampaign }) => {
       await createCampaign(campaign);
     } catch (error) {
       console.log(error);
-      showNotification("Failed to create campaign!", "error");
     }
   };
 

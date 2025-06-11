@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import { MultiContractContext } from "../Context/MultiContractContext";
 import Link from "next/link";
@@ -6,15 +6,29 @@ import Link from "next/link";
 const NavBar = () => {
   const { currentAccount, connectWallet, disconnectWallet } = useContext(MultiContractContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const router = useRouter();
 
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const menuList = [
-    { name: "Optimized", path: "/" },
-    { name: "Original", path: "/original" },
-    { name: "Variable Packing", path: "/variable-packing" },
-    { name: "Batch Processing", path: "/batch-processing" },
+    { name: "Optimalisasi Variabel", path: "/variable-packing" },
+    { name: "Penggabungan Transaksi", path: "/batch-processing" },
     { name: "About", path: "/about" },
-    { name: "Gas Stats", path: "/gas-stats" }
+    { name: "Statistik Gasfee", path: "/gas-stats" }
   ];
 
   return (
@@ -51,6 +65,37 @@ const NavBar = () => {
               );
             })}
             
+            {/* Dropdown untuk Optimized dan Original */}
+            <div
+              ref={dropdownRef}
+              className="relative"
+            >
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-black focus:outline-none"
+              >
+                Lainnya
+              </button>
+              <div 
+                className={`${isDropdownOpen ? 'block' : 'hidden'} absolute right-0 top-[calc(100%+8px)] w-48 bg-black rounded-md shadow-lg py-1 z-20`}
+              >
+                <Link
+                  href="/"
+                  className="block px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  Optimized
+                </Link>
+                <Link
+                  href="/original"
+                  className="block px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  Original
+                </Link>
+              </div>
+            </div>
+            
             {/* Wallet Info and Button - Dipindah ke sini */}
             {!currentAccount ? (
               <button
@@ -78,6 +123,32 @@ const NavBar = () => {
           {isMenuOpen && (
             <div className="lg:hidden absolute top-16 left-0 right-0 bg-black z-50">
               <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                {/* Dropdown di mobile menu */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
+                  >
+                    Lainnya
+                  </button>
+                  <div className={`${isDropdownOpen ? 'block' : 'hidden'} mt-1 bg-gray-800 rounded-md shadow-lg py-1`}>
+                    <Link
+                      href="/"
+                      className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Optimized
+                    </Link>
+                    <Link
+                      href="/original"
+                      className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Original
+                    </Link>
+                  </div>
+                </div>
+
                 {menuList.map((item, index) => {
                   const isActive = router.pathname === item.path;
                   return (

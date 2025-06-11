@@ -36,6 +36,14 @@ const VariablePacking = () => {
       const fetchData = async () => {
         const allData = await getCampaigns();
         const userData = await getUserCampaigns();
+        
+        // Log untuk debug
+        console.log("DEBUG - Campaign Data:", {
+          allData: allData,
+          userData: userData,
+          activeContract: activeContract
+        });
+        
         setAllcampaign(allData);
         setUsercampaign(userData);
       };
@@ -46,6 +54,17 @@ const VariablePacking = () => {
   //DONATE POPUP MODEL
   const [openModel, setOpenModel] = useState(false);
   const [donateCampaign, setDonateCampaign] = useState();
+
+  const handleDonate = (campaign) => {
+    console.log("DEBUG - Selected Campaign:", {
+      campaign: campaign,
+      id: campaign.pId,
+      title: campaign.title,
+      owner: campaign.owner
+    });
+    setDonateCampaign(campaign);
+    setOpenModel(true);
+  };
 
   const fetchEthPrice = async () => {
     try {
@@ -75,7 +94,7 @@ const VariablePacking = () => {
               title="All Listed Campaign" 
               allcampaign={allcampaign} 
               setOpenModel={setOpenModel} 
-              setDonate={setDonateCampaign} 
+              setDonate={handleDonate} 
             />
           )}
           {!usercampaign ? (
@@ -85,18 +104,21 @@ const VariablePacking = () => {
               title="Your Created Campaign" 
               allcampaign={usercampaign} 
               setOpenModel={setOpenModel} 
-              setDonate={setDonateCampaign} 
+              setDonate={handleDonate} 
             />
           )}
         </div>
       </div>
 
       {/* Donation Popup */}
-      {openModel && (
+      {openModel && donateCampaign && (
         <PupUp 
           setOpenModel={setOpenModel} 
           getDonations={getDonations} 
-          donate={{...donateCampaign, contractVersion: 'variablePacking'}} 
+          donate={{
+            ...donateCampaign,
+            contractVersion: 'variable-packing'
+          }} 
           donateFunction={donate}
           getCampaigns={getCampaigns}
           getCurrentContract={getCurrentContract}

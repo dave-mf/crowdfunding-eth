@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { MultiContractContext } from '../Context/MultiContractContext';
 import { ethers } from 'ethers';
+import { getEthPrice } from '../utils/ethPrice';
 
 const BatchDonate = () => {
     const { batchDonate, activeContract, gasFees, getCampaigns, switchContract } = useContext(MultiContractContext);
@@ -15,11 +16,11 @@ const BatchDonate = () => {
     // Fetch ETH price
     const fetchEthPrice = async () => {
         try {
-            const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd');
-            const data = await response.json();
-            setEthPrice(data.ethereum.usd);
+            const price = await getEthPrice();
+            setEthPrice(price);
         } catch (error) {
             console.error("Error fetching ETH price:", error);
+            setEthPrice(2500); // Fallback price
         }
     };
 
@@ -176,7 +177,10 @@ const BatchDonate = () => {
             console.log("Formatted amounts:", formattedAmounts); // Debug log
 
             // Execute batch donation
-            await batchDonate(campaignIds, formattedAmounts);
+            await batchDonate(campaignIds, formattedAmounts, {
+                methodName: 'Batch Donation',
+                contractVersion: 'batch-processing'
+            });
 
             // Reset form
             setSelectedCampaigns([]);

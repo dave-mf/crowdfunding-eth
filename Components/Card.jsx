@@ -15,6 +15,18 @@ const Card = ({ allcampaign, setOpenModel, setDonate, title }) => {
     isCampaignActive(campaign.deadline)
   );
 
+  const handleDonate = (campaign) => {
+    console.log("DEBUG - Card Component:", {
+      title: title,
+      selectedCampaign: campaign,
+      campaignId: campaign.pId,
+      campaignTitle: campaign.title,
+      owner: campaign.owner
+    });
+    setDonate(campaign);
+    setOpenModel(true);
+  };
+
   return (
     <div className="px-4 py-12 mx-auto max-w-screen-xl">
       <h2 className="text-2xl font-semibold mb-8">{title}</h2>
@@ -27,7 +39,7 @@ const Card = ({ allcampaign, setOpenModel, setDonate, title }) => {
             <div
               key={i + 1}
               onClick={() =>
-                !isFundingComplete && (setDonate(campaign), setOpenModel(true))
+                !isFundingComplete && handleDonate(campaign)
               }
               className={`cursor-pointer bg-white border shadow-sm rounded-2xl p-4 transition duration-300 hover:shadow-md ${
                 isFundingComplete ? "pointer-events-none opacity-90" : ""

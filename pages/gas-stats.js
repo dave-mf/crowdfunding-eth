@@ -94,8 +94,11 @@ const GasStats = () => {
 
   // Calculate savings percentage
   const calculateSavings = (original, optimized) => {
-    if (!original || !optimized) return 0;
-    return ((original - optimized) / original * 100).toFixed(2);
+    if (!original || !optimized || original === 0) return 0;
+    const originalFee = parseFloat(original);
+    const optimizedFee = parseFloat(optimized);
+    if (isNaN(originalFee) || isNaN(optimizedFee)) return 0;
+    return ((originalFee - optimizedFee) / originalFee * 100).toFixed(2);
   };
 
   // Format gas fee to ETH

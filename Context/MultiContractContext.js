@@ -224,12 +224,8 @@ export const MultiContractProvider = ({ children }) => {
         });
         const currentUser = accounts[0];
 
-        const filteredCampaigns = allCampaigns.filter(
-            (campaign) =>
-                campaign.owner.toLowerCase() === currentUser.toLowerCase()
-        );
-
-        const userData = filteredCampaigns.map((campaign, i) => ({
+        // Map all campaigns first to get the correct pId
+        const mappedCampaigns = allCampaigns.map((campaign, i) => ({
             owner: campaign.owner,
             title: campaign.title,
             description: campaign.description,
@@ -238,9 +234,20 @@ export const MultiContractProvider = ({ children }) => {
             amountCollected: ethers.utils.formatEther(
                 campaign.amountCollected.toString()
             ),
-            pId: i,
-            contractVersion: activeContract // Add contract version
+            pId: i,  // Use the original index as pId
+            contractVersion: activeContract
         }));
+
+        // Then filter for user's campaigns
+        const userData = mappedCampaigns.filter(
+            (campaign) => campaign.owner.toLowerCase() === currentUser.toLowerCase()
+        );
+
+        console.log("DEBUG - User Campaigns:", {
+            allCampaignsCount: allCampaigns.length,
+            userCampaignsCount: userData.length,
+            userCampaigns: userData
+        });
 
         return userData;
     };
@@ -443,14 +450,14 @@ export const MultiContractProvider = ({ children }) => {
 
         try {
             // Calculate total value and format amounts properly
-            const totalValue = amounts.reduce((sum, amount) => 
-                sum.add(ethers.utils.parseEther(amount.toString())), 
-                ethers.BigNumber.from(0)
-            );
+            const totalValue = amounts.reduce((sum, amount) => {
+                const parsedAmount = ethers.utils.parseEther(amount.toString());
+                return sum.add(parsedAmount);
+            }, ethers.BigNumber.from(0));
 
             // Format amounts for the contract call
             const formattedAmounts = amounts.map(amount => 
-                ethers.utils.parseEther(amount.toString()).toString()
+                ethers.utils.parseEther(amount.toString())
             );
 
             console.log("Campaign IDs:", ids); // Debug log
@@ -465,7 +472,7 @@ export const MultiContractProvider = ({ children }) => {
                 console.log("Using single donation function");
                 methodName = 'donateToCampaign';
                 transaction = await contract.donateToCampaign(ids[0], {
-                    value: totalValue,
+                    value: formattedAmounts[0],
                 });
             } else {
                 // Use batch donation for multiple campaigns
@@ -493,7 +500,7 @@ export const MultiContractProvider = ({ children }) => {
 
             // Log transaction for each campaign
             for (let i = 0; i < ids.length; i++) {
-                await createDonation(
+                await logTransaction(
                     transaction.hash,
                     ids[i],
                     amounts[i],
@@ -505,6 +512,90 @@ export const MultiContractProvider = ({ children }) => {
             return transaction;
         } catch (error) {
             console.log("Contract Call Failure!", error);
+            throw error;
+        }
+    };
+
+    // Add logTransaction function
+    const logTransaction = async (txHash, campaignId, amount, method) => {
+        try {
+            // Get transaction data from MetaMask
+            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const tx = await provider.getTransaction(txHash);
+            const receipt = await provider.getTransactionReceipt(txHash);
+            
+            // Get method name from transaction data
+            let methodName = method;
+            if (!methodName && tx.data) {
+                // Decode transaction data to get method name
+                const iface = new ethers.utils.Interface(getCurrentContract().abi);
+                try {
+                    const decodedData = iface.parseTransaction({ data: tx.data });
+                    methodName = decodedData.name;
+                } catch (error) {
+                    console.error("Error decoding transaction data:", error);
+                    methodName = "unknown";
+                }
+            }
+
+            // Map method names to standardized format
+            const methodMap = {
+                'donateToCampaign': 'Single Donation',
+                'batchDonate': 'Batch Donation',
+                'donateBatch': 'Batch Donation',
+                'unknown': 'Unknown Method'
+            };
+
+            const standardizedMethod = methodMap[methodName] || methodName;
+
+            // Get campaign title and contract version
+            const campaigns = await getCampaigns();
+            const campaign = campaigns.find(c => c.pId === campaignId);
+            const campaignTitle = campaign ? campaign.title : 'Unknown Campaign';
+            const contractVersion = campaign ? campaign.contractVersion : 'unknown';
+
+            // Calculate gas fee
+            const gasUsed = receipt.gasUsed;
+            const gasPrice = receipt.effectiveGasPrice || tx.gasPrice;
+            const gasFeeInWei = gasUsed.mul(gasPrice);
+            const gasFeeInEth = ethers.utils.formatEther(gasFeeInWei);
+
+            // Get ETH price in USD
+            const currentEthPrice = await getEthPrice();
+            const gasFeeInUsd = (parseFloat(gasFeeInEth) * currentEthPrice).toFixed(2);
+
+            // Get current account as donator address
+            const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+            const donatorAddress = accounts[0];
+
+            const response = await fetch('/api/gas-fee', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    campaignId: campaignId,
+                    donatorAddress: donatorAddress,
+                    donationAmount: amount,
+                    gasFee: gasFeeInEth,
+                    maxFee: '0',
+                    gasPrice: gasPrice.toString(),
+                    gasLimit: gasUsed.toString(),
+                    contractVersion: contractVersion,
+                    isSuccess: true,
+                    campaignTitle: campaignTitle,
+                    methodName: standardizedMethod
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Failed to log transaction');
+            }
+
+            console.log("Transaction logged successfully");
+        } catch (error) {
+            console.error("Error logging transaction:", error);
             throw error;
         }
     };

@@ -66,7 +66,7 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
       const contract = getCurrentContract().contract || getCurrentContract();
 
       let gasEstimate;
-      if (donate.contractVersion === 'batchProcessing' || donate.contractVersion === 'variablePacking') {
+      if (donate.contractVersion === 'batch-processing' || donate.contractVersion === 'variable-packing') {
         // For batch donation contracts
         gasEstimate = await contract.estimateGas.batchDonate([donate.pId], [ethers.utils.parseEther(amount)]);
       } else {
@@ -99,15 +99,52 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
   // Fetch donation history from database
   const fetchDonationHistory = async () => {
     try {
-      if (!donate || !donate.contractVersion) {
+      if (!donate || !donate.pId) {
+        console.log("No donate or pId:", donate);
         setAllDonationData([]);
         return;
       }
 
+      // Validate campaign data
+      console.log("DEBUG - Campaign Validation:", {
+        currentCampaignId: donate.pId,
+        currentCampaignTitle: donate.title,
+        currentOwner: donate.owner,
+        currentContractVersion: donate.contractVersion,
+        fullDonateObject: donate
+      });
+
+      // Normalize contract version
+      let contractVersion = donate.contractVersion;
+      if (contractVersion === 'variablePacking') {
+        contractVersion = 'variable-packing';
+      } else if (contractVersion === 'batchProcessing') {
+        contractVersion = 'batch-processing';
+      }
+
       // Get transactions from database filtered by campaign ID and contract version
-      const response = await fetch(`/api/gas-fee?campaignId=${donate.pId}&contractVersion=${donate.contractVersion}`);
+      const response = await fetch(`/api/gas-fee?campaignId=${donate.pId}&contractVersion=${contractVersion}`);
       const result = await response.json();
       
+      console.log("DEBUG - API Response:", {
+        url: `/api/gas-fee?campaignId=${donate.pId}&contractVersion=${contractVersion}`,
+        response: result
+      });
+
+      // Validate that we got transactions for the correct campaign
+      if (result.transactions && result.transactions.length > 0) {
+        const firstTx = result.transactions[0];
+        if (firstTx.campaign_id !== donate.pId) {
+          console.error("Mismatched campaign ID:", {
+            expected: donate.pId,
+            received: firstTx.campaign_id,
+            campaignTitle: firstTx.campaign_title
+          });
+          setAllDonationData([]);
+          return;
+        }
+      }
+
       // Check if result has transactions array
       if (!result || !result.transactions || !Array.isArray(result.transactions)) {
         console.log("No transactions found or invalid format:", result);
@@ -143,6 +180,13 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
         };
       });
 
+      console.log("DEBUG - Formatted donations:", {
+        campaignId: donate.pId,
+        campaignTitle: donate.title,
+        transactionCount: formattedDonations.length,
+        transactions: formattedDonations
+      });
+      
       setAllDonationData(formattedDonations);
     } catch (error) {
       console.error("Error fetching donation history:", error);
@@ -150,9 +194,10 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
     }
   };
 
-  // Update donation history when ETH price changes
+  // Update donation history when ETH price changes or when donate changes
   useEffect(() => {
-    if (donate) {
+    console.log("Donate changed:", donate);
+    if (donate && donate.pId) {
       fetchDonationHistory();
     }
   }, [ethPrice, donate]);
@@ -163,14 +208,6 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
     setOpenModel(false);
   };
 
-  useEffect(() => {
-    if (donate) {
-      fetchDonationHistory();
-    } else {
-      setAllDonationData([]);
-    }
-  }, [donate]);
-
   const createDonation = async () => {
     try {
       setIsLoading(true);
@@ -179,12 +216,17 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
       // Wait for transaction to be mined
       const receipt = await transaction.wait();
       
+      // Determine method name based on contract version
+      const methodName = donate.contractVersion === 'batch-processing' || donate.contractVersion === 'variable-packing'
+        ? 'batchDonate'
+        : 'donateToCampaign';
+      
       // Log transaction
       await logTransaction(
         transaction.hash,
         donate.pId,
         amount,
-        'donateToCampaign'
+        methodName
       );
       
       setOpenModel(false);
@@ -198,11 +240,24 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
   // Rename the logging function to avoid confusion
   const logTransaction = async (txHash, campaignId, amount, method) => {
     try {
+      console.log("Starting logTransaction with:", {
+        txHash,
+        campaignId,
+        amount,
+        method,
+        donate: donate
+      });
+
       // Get transaction data from MetaMask
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const tx = await provider.getTransaction(txHash);
       const receipt = await provider.getTransactionReceipt(txHash);
       
+      console.log("Transaction data:", {
+        tx,
+        receipt
+      });
+
       // Get method name from transaction data
       let methodName = method;
       if (!methodName && tx.data) {
@@ -231,7 +286,13 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
       const campaigns = await getCampaigns();
       const campaign = campaigns.find(c => c.pId === campaignId);
       const campaignTitle = campaign ? campaign.title : 'Unknown Campaign';
-      const contractVersion = campaign ? campaign.contractVersion : 'unknown';
+      const contractVersion = donate.contractVersion || 'optimized'; // Use the contract version from the current donation
+
+      console.log("Campaign data:", {
+        campaign,
+        campaignTitle,
+        contractVersion
+      });
 
       // Calculate gas fee
       const gasUsed = receipt.gasUsed;
@@ -246,6 +307,16 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
       // Get current account as donator address
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
       const donatorAddress = accounts[0];
+
+      console.log("Logging transaction:", {
+        campaignId,
+        donatorAddress,
+        amount,
+        gasFeeInEth,
+        contractVersion,
+        campaignTitle,
+        methodName: standardizedMethod
+      });
 
       const response = await fetch('/api/gas-fee', {
         method: 'POST',
@@ -269,16 +340,18 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("Error response from API:", errorData);
         throw new Error(errorData.error || 'Failed to log transaction');
       }
 
-      console.log("Transaction logged successfully");
+      const responseData = await response.json();
+      console.log("Transaction logged successfully:", responseData);
       
       // Refresh donation history after successful logging
       await fetchDonationHistory();
     } catch (error) {
       console.error("Error logging transaction:", error);
-      throw error; // Re-throw to handle in createDonation
+      throw error;
     }
   };
 
