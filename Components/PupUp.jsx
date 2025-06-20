@@ -275,23 +275,31 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
       // Map method names to standardized format
       const methodMap = {
         'donateToCampaign': 'Single Donation',
+        'donate': 'Single Donation',           // Add this for variable-packing
         'batchDonate': 'Batch Donation',
         'donateBatch': 'Batch Donation',
         'unknown': 'Unknown Method'
       };
 
-      const standardizedMethod = methodMap[methodName] || methodName;
+      let standardizedMethod = methodMap[methodName] || methodName;
 
       // Get campaign title and contract version
       const campaigns = await getCampaigns();
       const campaign = campaigns.find(c => c.pId === campaignId);
       const campaignTitle = campaign ? campaign.title : 'Unknown Campaign';
-      const contractVersion = donate.contractVersion || 'optimized'; // Use the contract version from the current donation
+      const contractVersion = donate.contractVersion || 'optimized';
+
+      // Override method for variable-packing contract
+      if (contractVersion === 'variable-packing') {
+        standardizedMethod = 'Single Donation';
+      }
 
       console.log("Campaign data:", {
         campaign,
         campaignTitle,
-        contractVersion
+        contractVersion,
+        methodName,
+        standardizedMethod
       });
 
       // Calculate gas fee
@@ -308,14 +316,53 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
       const donatorAddress = accounts[0];
 
-      console.log("Logging transaction:", {
+      // Prepare batch data if this is a batch transaction
+      let batchData = {};
+      if (standardizedMethod === 'Batch Donation') {
+        // For batch transactions, use transaction hash as batch_id
+        batchData = {
+          batch_id: txHash,
+          batch_index: 0, // This will be updated by the API if needed
+          batch_size: 1   // This will be updated by the API if needed
+        };
+
+        // If this is a batch transaction, we need to get the total number of donations in the batch
+        try {
+          const iface = new ethers.utils.Interface(getCurrentContract().abi);
+          const decodedData = iface.parseTransaction({ data: tx.data });
+          
+          console.log("Decoded batch transaction data:", {
+            decodedData,
+            args: decodedData.args,
+            campaignId,
+            txHash
+          });
+          
+          // For batch transactions, the first argument is an array of campaign IDs
+          if (decodedData.args && Array.isArray(decodedData.args[0])) {
+            batchData.batch_size = decodedData.args[0].length;
+            
+            // Find the index of the current campaign in the batch
+            const campaignIndex = decodedData.args[0].findIndex(id => id.toString() === campaignId.toString());
+            if (campaignIndex !== -1) {
+              batchData.batch_index = campaignIndex;
+            }
+          }
+        } catch (error) {
+          console.error("Error decoding batch transaction data:", error);
+        }
+      }
+
+      console.log("Logging transaction with batch data:", {
         campaignId,
         donatorAddress,
         amount,
         gasFeeInEth,
         contractVersion,
         campaignTitle,
-        methodName: standardizedMethod
+        methodName: standardizedMethod,
+        batchData,
+        txHash
       });
 
       const response = await fetch('/api/gas-fee', {
@@ -334,7 +381,8 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
           contractVersion: contractVersion,
           isSuccess: true,
           campaignTitle: campaignTitle,
-          methodName: standardizedMethod
+          methodName: standardizedMethod,
+          ...batchData // Include batch data if this is a batch transaction
         }),
       });
 

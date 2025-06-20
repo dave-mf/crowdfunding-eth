@@ -14,7 +14,10 @@ export default async function handler(req, res) {
         contractVersion,
         isSuccess,
         campaignTitle,
-        methodName
+        methodName,
+        batch_id,
+        batch_index,
+        batch_size
       } = req.body;
 
       const query = `
@@ -29,8 +32,11 @@ export default async function handler(req, res) {
           contract_version,
           is_success,
           campaign_title,
-          method_name
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+          method_name,
+          batch_id,
+          batch_index,
+          batch_size
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
         RETURNING *;
       `;
 
@@ -45,7 +51,10 @@ export default async function handler(req, res) {
         contractVersion || 'original',
         isSuccess,
         campaignTitle || '',
-        methodName || ''
+        methodName || '',
+        batch_id || null,
+        batch_index || null,
+        batch_size || null
       ];
 
       const result = await pool.query(query, values);
@@ -190,15 +199,16 @@ export default async function handler(req, res) {
               total_gas_fee: record.total_gas_fee,
               transaction_count: record.transaction_count
             };
+            groupedData[version].push({
+              avg_gas_fee: record.avg_gas_fee,
+              total_gas_fee: record.total_gas_fee,
+              transaction_count: record.transaction_count
+            });
           }
-          groupedData[version].push({
-            ...record,
-            avg_gas_fee: versionStats[version].avg_gas_fee,
-            total_gas_fee: versionStats[version].total_gas_fee,
-            transaction_count: versionStats[version].transaction_count
-          });
         }
       });
+
+      console.log("Grouped data for stats:", groupedData);
 
       res.status(200).json({
         transactions: result.rows,

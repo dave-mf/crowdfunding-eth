@@ -68,22 +68,74 @@ const GasStats = () => {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const data = await GasFeeService.getGasFeeStats({
+        
+        console.log("=== START FETCHING STATS ===");
+        console.log("Filters:", {
+          selectedCampaign,
+          timeRange,
+          selectedVersion,
+          currentPage
+        });
+        
+        // Fetch statistics for all contract versions
+        const statsPromises = [
+          { frontend: 'original', backend: 'original' },
+          { frontend: 'optimized', backend: 'optimized' },
+          { frontend: 'variablePacking', backend: 'variable-packing' },
+          { frontend: 'batchProcessing', backend: 'batch-processing' }
+        ].map(async ({ frontend, backend }) => {
+          console.log(`\nFetching stats for ${frontend} (backend: ${backend})`);
+          const data = await GasFeeService.getGasFeeStats({
+            campaignId: selectedCampaign,
+            timeRange: timeRange,
+            contractVersion: backend,
+            page: 1,
+            limit: 1000 // Get all stats for this version
+          });
+          console.log(`Raw data for ${frontend}:`, data);
+          console.log(`Stats data for ${frontend}:`, data.stats);
+          return { version: frontend, data: data.stats };
+        });
+
+        const statsResults = await Promise.all(statsPromises);
+        console.log("\nAll stats results:", statsResults);
+        
+        const newStats = {};
+        statsResults.forEach(({ version, data }) => {
+          console.log(`\nProcessing stats for ${version}:`, data);
+          // Extract the correct array from the nested structure
+          newStats[version] = data[version] || [];
+        });
+        console.log("\nFinal stats object:", newStats);
+        console.log("Stats structure:", {
+          original: newStats.original?.[0],
+          optimized: newStats.optimized?.[0],
+          variablePacking: newStats.variablePacking?.[0],
+          batchProcessing: newStats.batchProcessing?.[0]
+        });
+        setStats(newStats);
+
+        // Fetch paginated transactions
+        const txData = await GasFeeService.getGasFeeStats({
           campaignId: selectedCampaign,
           timeRange: timeRange,
-          contractVersion: selectedVersion,
+          contractVersion: selectedVersion === 'all' ? 'all' : 
+            selectedVersion === 'variablePacking' ? 'variable-packing' :
+            selectedVersion === 'batchProcessing' ? 'batch-processing' :
+            selectedVersion,
           page: currentPage,
           limit: itemsPerPage
         });
         
-        setStats(data.stats);
-        setTransactions(data.transactions);
-        // Ensure totalPages is a positive number
-        const calculatedTotalPages = Math.max(1, Math.ceil((data.total_count || 0) / itemsPerPage));
+        console.log("\nTransaction data:", txData);
+        setTransactions(txData.transactions);
+        const calculatedTotalPages = Math.max(1, Math.ceil((txData.total_count || 0) / itemsPerPage));
         setTotalPages(calculatedTotalPages);
+        
+        console.log("=== END FETCHING STATS ===\n");
       } catch (error) {
-        console.error('Error fetching gas stats:', error);
-        setTotalPages(1); // Reset to 1 on error
+        console.error('Error fetching data:', error);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
@@ -167,19 +219,19 @@ const GasStats = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Transactions</span>
-                    <span className="font-medium text-gray-900">{stats.original.length}</span>
+                    <span className="font-medium text-gray-900">{stats.original?.[0]?.transaction_count || 0}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Average Gas Fee</span>
-                    <span className="font-medium text-gray-900">{formatGasFee(stats.original[0]?.avg_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFee(stats.original?.[0]?.avg_gas_fee)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Gas Fee</span>
-                    <span className="font-medium text-gray-900">{formatGasFee(stats.original[0]?.total_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFee(stats.original?.[0]?.total_gas_fee)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Gas Fee (USD)</span>
-                    <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.original[0]?.total_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.original?.[0]?.total_gas_fee)}</span>
                   </div>
                 </div>
               </div>
@@ -197,25 +249,25 @@ const GasStats = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Transactions</span>
-                    <span className="font-medium text-gray-900">{stats.optimized.length}</span>
+                    <span className="font-medium text-gray-900">{stats.optimized?.[0]?.transaction_count || 0}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Average Gas Fee</span>
-                    <span className="font-medium text-gray-900">{formatGasFee(stats.optimized[0]?.avg_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFee(stats.optimized?.[0]?.avg_gas_fee)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Gas Fee</span>
-                    <span className="font-medium text-gray-900">{formatGasFee(stats.optimized[0]?.total_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFee(stats.optimized?.[0]?.total_gas_fee)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Gas Fee (USD)</span>
-                    <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.optimized[0]?.total_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.optimized?.[0]?.total_gas_fee)}</span>
                   </div>
                   <div className="p-3 bg-green-50 rounded-lg border border-green-100">
                     <div className="flex justify-between items-center">
                       <span className="text-green-700 font-medium">Savings</span>
                       <span className="text-green-700 font-bold">
-                        {calculateSavings(stats.original[0]?.avg_gas_fee, stats.optimized[0]?.avg_gas_fee)}%
+                        {calculateSavings(stats.original?.[0]?.avg_gas_fee, stats.optimized?.[0]?.avg_gas_fee)}%
                       </span>
                     </div>
                   </div>
@@ -235,25 +287,25 @@ const GasStats = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Transactions</span>
-                    <span className="font-medium text-gray-900">{stats.variablePacking.length}</span>
+                    <span className="font-medium text-gray-900">{stats.variablePacking?.[0]?.transaction_count || 0}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Average Gas Fee</span>
-                    <span className="font-medium text-gray-900">{formatGasFee(stats.variablePacking[0]?.avg_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFee(stats.variablePacking?.[0]?.avg_gas_fee)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Gas Fee</span>
-                    <span className="font-medium text-gray-900">{formatGasFee(stats.variablePacking[0]?.total_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFee(stats.variablePacking?.[0]?.total_gas_fee)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Gas Fee (USD)</span>
-                    <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.variablePacking[0]?.total_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.variablePacking?.[0]?.total_gas_fee)}</span>
                   </div>
                   <div className="p-3 bg-purple-50 rounded-lg border border-purple-100">
                     <div className="flex justify-between items-center">
                       <span className="text-purple-700 font-medium">Savings</span>
                       <span className="text-purple-700 font-bold">
-                        {calculateSavings(stats.original[0]?.avg_gas_fee, stats.variablePacking[0]?.avg_gas_fee)}%
+                        {calculateSavings(stats.original?.[0]?.avg_gas_fee, stats.variablePacking?.[0]?.avg_gas_fee)}%
                       </span>
                     </div>
                   </div>
@@ -273,25 +325,25 @@ const GasStats = () => {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Transactions</span>
-                    <span className="font-medium text-gray-900">{stats.batchProcessing.length}</span>
+                    <span className="font-medium text-gray-900">{stats.batchProcessing?.[0]?.transaction_count || 0}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Average Gas Fee</span>
-                    <span className="font-medium text-gray-900">{formatGasFee(stats.batchProcessing[0]?.avg_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFee(stats.batchProcessing?.[0]?.avg_gas_fee)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Gas Fee</span>
-                    <span className="font-medium text-gray-900">{formatGasFee(stats.batchProcessing[0]?.total_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFee(stats.batchProcessing?.[0]?.total_gas_fee)}</span>
                   </div>
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Gas Fee (USD)</span>
-                    <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.batchProcessing[0]?.total_gas_fee)}</span>
+                    <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.batchProcessing?.[0]?.total_gas_fee)}</span>
                   </div>
                   <div className="p-3 bg-orange-50 rounded-lg border border-orange-100">
                     <div className="flex justify-between items-center">
                       <span className="text-orange-700 font-medium">Savings</span>
                       <span className="text-orange-700 font-bold">
-                        {calculateSavings(stats.original[0]?.avg_gas_fee, stats.batchProcessing[0]?.avg_gas_fee)}%
+                        {calculateSavings(stats.original?.[0]?.avg_gas_fee, stats.batchProcessing?.[0]?.avg_gas_fee)}%
                       </span>
                     </div>
                   </div>

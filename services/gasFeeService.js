@@ -76,20 +76,36 @@ class GasFeeService {
     }
 
     // Get gas fee statistics with filters
-    static async getGasFeeStats(filters = {}) {
+    static async getGasFeeStats({ campaignId, timeRange, contractVersion, page, limit }) {
         try {
-            const queryParams = new URLSearchParams();
-            if (filters.campaignId) queryParams.append('campaignId', filters.campaignId);
-            if (filters.timeRange) queryParams.append('timeRange', filters.timeRange);
-            if (filters.contractVersion) queryParams.append('contractVersion', filters.contractVersion);
+            console.log("GasFeeService - Fetching stats with params:", {
+                campaignId,
+                timeRange,
+                contractVersion,
+                page,
+                limit
+            });
 
-            const response = await fetch(`/api/gas-fee?${queryParams.toString()}`);
+            const queryParams = new URLSearchParams({
+                campaignId: campaignId || 'all',
+                timeRange: timeRange || 'all',
+                contractVersion: contractVersion || 'all',
+                page: page || 1,
+                limit: limit || 10
+            });
+
+            const response = await fetch(`/api/gas-fee?${queryParams}`);
+            const data = await response.json();
+
+            console.log("GasFeeService - Received data:", data);
+
             if (!response.ok) {
-                throw new Error('Failed to get gas fee stats');
+                throw new Error(data.error || 'Failed to fetch gas fee stats');
             }
-            return await response.json();
+
+            return data;
         } catch (error) {
-            console.error('Error getting gas fee stats:', error);
+            console.error('GasFeeService - Error:', error);
             throw error;
         }
     }
