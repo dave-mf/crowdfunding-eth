@@ -53,8 +53,8 @@ export default async function handler(req, res) {
         campaignTitle || '',
         methodName || '',
         batch_id || null,
-        batch_index || null,
-        batch_size || null
+        typeof batch_index === 'number' ? batch_index : null,
+        typeof batch_size === 'number' ? batch_size : null
       ];
 
       const result = await pool.query(query, values);
@@ -207,6 +207,26 @@ export default async function handler(req, res) {
           }
         }
       });
+
+      // PATCH: Khusus batch-processing dan optimized, hitung total gas fee unik per batch_id (batch_index === 0)
+      ["batchProcessing", "optimized"].forEach((key) => {
+        if (groupedData[key].length > 0) {
+          // Ambil semua transaksi batch dari result.rows
+          const batchRows = result.rows.filter(
+            r => (r.normalized_version === key && r.batch_id)
+          );
+          // Ambil hanya satu gas_fee per batch_id (batch_index === 0)
+          const uniqueBatchFees = batchRows.filter(r => r.batch_index === 0);
+          const totalGasFee = uniqueBatchFees.reduce((sum, r) => sum + parseFloat(r.gas_fee), 0);
+          const avgGasFee = uniqueBatchFees.length > 0 ? totalGasFee / uniqueBatchFees.length : 0;
+          groupedData[key] = [{
+            avg_gas_fee: avgGasFee.toFixed(18),
+            total_gas_fee: totalGasFee.toFixed(18),
+            transaction_count: uniqueBatchFees.length
+          }];
+        }
+      });
+      // END PATCH
 
       console.log("Grouped data for stats:", groupedData);
 

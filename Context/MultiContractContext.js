@@ -504,7 +504,9 @@ export const MultiContractProvider = ({ children }) => {
                     transaction.hash,
                     ids[i],
                     amounts[i],
-                    methodName
+                    methodName,
+                    ids, // pass all ids for batch context
+                    i    // pass index
                 );
             }
 
@@ -517,7 +519,7 @@ export const MultiContractProvider = ({ children }) => {
     };
 
     // Add logTransaction function
-    const logTransaction = async (txHash, campaignId, amount, method) => {
+    const logTransaction = async (txHash, campaignId, amount, method, ids = [], batchIndex = 0) => {
         try {
             // Get transaction data from MetaMask
             const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -568,6 +570,19 @@ export const MultiContractProvider = ({ children }) => {
             const accounts = await window.ethereum.request({ method: 'eth_accounts' });
             const donatorAddress = accounts[0];
 
+            // Prepare batch data if this is a batch transaction
+            let batchData = {};
+            if (
+              (standardizedMethod === 'Batch Donation' && Array.isArray(ids) && ids.length > 1) ||
+              (contractVersion === 'optimized' && Array.isArray(ids) && ids.length > 1)
+            ) {
+                batchData = {
+                    batch_id: txHash,
+                    batch_index: batchIndex,
+                    batch_size: ids.length
+                };
+            }
+
             const response = await fetch('/api/gas-fee', {
                 method: 'POST',
                 headers: {
@@ -584,7 +599,8 @@ export const MultiContractProvider = ({ children }) => {
                     contractVersion: contractVersion,
                     isSuccess: true,
                     campaignTitle: campaignTitle,
-                    methodName: standardizedMethod
+                    methodName: standardizedMethod,
+                    ...batchData
                 }),
             });
 
