@@ -15,10 +15,8 @@ const GasStats = () => {
   const [transactions, setTransactions] = useState([]);
   const [ethPrice, setEthPrice] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedCampaign, setSelectedCampaign] = useState('all');
   const [timeRange, setTimeRange] = useState('all');
   const [selectedVersion, setSelectedVersion] = useState('all');
-  const [campaigns, setCampaigns] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 10;
@@ -40,29 +38,6 @@ const GasStats = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch campaign titles
-  useEffect(() => {
-    const fetchCampaigns = async () => {
-      try {
-        const campaignData = await getCampaigns();
-        const campaignMap = {};
-        campaignData.forEach(campaign => {
-          // Store campaign data with both contract version and campaign ID
-          const key = `${campaign.contractVersion || 'original'}-${campaign.pId}`;
-          campaignMap[key] = {
-            title: campaign.title,
-            contractVersion: campaign.contractVersion || 'original'
-          };
-        });
-        setCampaigns(campaignMap);
-      } catch (error) {
-        console.error('Error fetching campaigns:', error);
-      }
-    };
-
-    fetchCampaigns();
-  }, [getCampaigns]);
-
   // Fetch gas fee stats
   useEffect(() => {
     const fetchStats = async () => {
@@ -71,7 +46,6 @@ const GasStats = () => {
         
         console.log("=== START FETCHING STATS ===");
         console.log("Filters:", {
-          selectedCampaign,
           timeRange,
           selectedVersion,
           currentPage
@@ -86,7 +60,6 @@ const GasStats = () => {
         ].map(async ({ frontend, backend }) => {
           console.log(`\nFetching stats for ${frontend} (backend: ${backend})`);
           const data = await GasFeeService.getGasFeeStats({
-            campaignId: selectedCampaign,
             timeRange: timeRange,
             contractVersion: backend,
             page: 1,
@@ -117,7 +90,6 @@ const GasStats = () => {
 
         // Fetch paginated transactions
         const txData = await GasFeeService.getGasFeeStats({
-          campaignId: selectedCampaign,
           timeRange: timeRange,
           contractVersion: selectedVersion === 'all' ? 'all' : 
             selectedVersion === 'variablePacking' ? 'variable-packing' :
@@ -142,7 +114,7 @@ const GasStats = () => {
     };
 
     fetchStats();
-  }, [selectedCampaign, timeRange, selectedVersion, currentPage]);
+  }, [timeRange, selectedVersion, currentPage]);
 
   // Calculate savings percentage
   const calculateSavings = (original, optimized) => {
@@ -353,25 +325,7 @@ const GasStats = () => {
 
             {/* Filters */}
             <div className="bg-white rounded-lg shadow p-4 mb-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Campaign</label>
-                  <select
-                    value={selectedCampaign}
-                    onChange={(e) => {
-                      setSelectedCampaign(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                    className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                  >
-                    <option value="all">All Campaigns</option>
-                    {Object.entries(campaigns).map(([key, campaign]) => (
-                      <option key={key} value={campaign.pId}>
-                        {campaign.title}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Contract Version</label>
                   <select
@@ -428,10 +382,7 @@ const GasStats = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {transactions.map((tx) => {
-                      const campaignKey = `${tx.contract_version}-${tx.campaign_id}`;
-                      const campaignInfo = campaigns[campaignKey];
-                      const campaignTitle = tx.campaign_title || campaignInfo?.title || `Campaign #${tx.campaign_id}`;
-                      
+                      const campaignTitle = tx.campaign_title || `Campaign #${tx.campaign_id}`;
                       return (
                         <tr key={tx.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">

@@ -208,21 +208,24 @@ export default async function handler(req, res) {
         }
       });
 
-      // PATCH: Khusus batch-processing dan optimized, hitung total gas fee unik per batch_id (batch_index === 0)
+      // PATCH: Gabungkan single donation (tanpa batch_id) dan batch donation (batch_index === 0) untuk statistik optimized & batchProcessing
       ["batchProcessing", "optimized"].forEach((key) => {
         if (groupedData[key].length > 0) {
-          // Ambil semua transaksi batch dari result.rows
-          const batchRows = result.rows.filter(
-            r => (r.normalized_version === key && r.batch_id)
+          // Ambil semua single donation (tanpa batch_id)
+          const singleRows = result.rows.filter(
+            r => r.normalized_version === key && !r.batch_id
           );
-          // Ambil hanya satu gas_fee per batch_id (batch_index === 0)
-          const uniqueBatchFees = batchRows.filter(r => r.batch_index === 0);
-          const totalGasFee = uniqueBatchFees.reduce((sum, r) => sum + parseFloat(r.gas_fee), 0);
-          const avgGasFee = uniqueBatchFees.length > 0 ? totalGasFee / uniqueBatchFees.length : 0;
+          // Ambil satu gas_fee per batch donation (batch_index === 0)
+          const batchRows = result.rows.filter(
+            r => r.normalized_version === key && r.batch_id && r.batch_index === 0
+          );
+          const allRows = [...singleRows, ...batchRows];
+          const totalGasFee = allRows.reduce((sum, r) => sum + parseFloat(r.gas_fee), 0);
+          const avgGasFee = allRows.length > 0 ? totalGasFee / allRows.length : 0;
           groupedData[key] = [{
             avg_gas_fee: avgGasFee.toFixed(18),
             total_gas_fee: totalGasFee.toFixed(18),
-            transaction_count: uniqueBatchFees.length
+            transaction_count: allRows.length
           }];
         }
       });

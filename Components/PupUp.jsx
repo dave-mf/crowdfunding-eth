@@ -13,6 +13,8 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
   const [maxFee, setMaxFee] = useState(null);
   const [activeContract, setActiveContract] = useState(null);
 
+  const AMOUNT_TEMPLATES = [0.1, 0.01, 0.001, 0.0001];
+
   // Fetch ETH price
   const fetchEthPrice = async () => {
     try {
@@ -432,8 +434,21 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
               placeholder="Enter Amount to Donate (ETH)"
               type="number"
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              value={amount}
             />
-            
+            {/* Badge template */}
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {AMOUNT_TEMPLATES.map((amt) => (
+                <button
+                  key={amt}
+                  type="button"
+                  className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200 text-xs hover:bg-blue-100 focus:outline-none"
+                  onClick={() => setAmount(amt.toString())}
+                >
+                  {amt} ETH
+                </button>
+              ))}
+            </div>
             {/* Network Fee with realtime indicator */}
             {maxFee && (
               <div className="mt-2 p-2 bg-blue-50 rounded-md">
