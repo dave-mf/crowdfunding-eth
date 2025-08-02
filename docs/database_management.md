@@ -141,4 +141,122 @@ psql -d crowdfunding -c "VACUUM ANALYZE gas_fee_logs;"
    - Selalu backup database sebelum melakukan operasi besar
    - Gunakan indeks untuk optimasi query
    - Monitor ukuran database secara berkala
-   - Lakukan VACUUM secara periodik 
+   - Lakukan VACUUM secara periodik
+
+---
+
+## 5. Pengelolaan Database di VPS (Linux)
+
+**CATATAN:** Di VPS Linux, PostgreSQL menggunakan authentication method yang berbeda dengan local development. Untuk menghindari masalah authentication, gunakan user `postgres` saja.
+
+### Setup Database di VPS
+
+#### Install PostgreSQL:
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib -y
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+```
+
+#### Buat Database:
+```bash
+# Masuk sebagai postgres
+sudo -u postgres psql
+
+# Di dalam psql, buat database
+CREATE DATABASE crowdfunding;
+
+# Keluar dari psql
+\q
+```
+
+#### Import Data dari Backup:
+```bash
+# Import data (dari folder backup)
+sudo -u postgres psql -d crowdfunding < backup/crowdfunding_backup.sql
+
+# Atau jika sudah di folder backup
+sudo -u postgres psql -d crowdfunding < crowdfunding_backup.sql
+```
+
+### Melihat Data di VPS
+
+#### Cek database yang ada:
+```bash
+sudo -u postgres psql -l
+```
+
+#### Cek tabel dalam database:
+```bash
+sudo -u postgres psql -d crowdfunding -c "\\dt"
+```
+
+#### Cek data transaksi:
+```bash
+sudo -u postgres psql -d crowdfunding -c "SELECT COUNT(*) FROM gas_fee_logs;"
+sudo -u postgres psql -d crowdfunding -c "SELECT * FROM gas_fee_logs LIMIT 5;"
+```
+
+### Mereset Database di VPS
+
+#### Reset seluruh database:
+```bash
+sudo -u postgres psql -c "DROP DATABASE IF EXISTS crowdfunding;"
+sudo -u postgres psql -c "CREATE DATABASE crowdfunding;"
+```
+
+#### Reset tabel spesifik:
+```bash
+sudo -u postgres psql -d crowdfunding -c "TRUNCATE TABLE gas_fee_logs;"
+```
+
+### Backup Database di VPS
+
+#### Backup database:
+```bash
+sudo -u postgres pg_dump crowdfunding > crowdfunding_backup_$(date +%Y%m%d_%H%M%S).sql
+```
+
+#### Restore database:
+```bash
+sudo -u postgres psql -d crowdfunding < crowdfunding_backup.sql
+```
+
+### Environment Variables di VPS
+
+#### Update file .env:
+```env
+DATABASE_URL=postgresql://postgres@localhost:5432/crowdfunding
+NEXT_PUBLIC_RPC_URL=https://sepolia.infura.io/v3/YOUR_INFURA_KEY
+NEXT_PUBLIC_CHAIN_ID=11155111
+NEXTAUTH_SECRET=your_secret_key
+NEXTAUTH_URL=http://your-vps-ip
+```
+
+### Troubleshooting di VPS
+
+#### Jika ada error "role does not exist":
+```bash
+# Gunakan postgres user saja
+sudo -u postgres psql -d crowdfunding
+```
+
+#### Jika ada error "database does not exist":
+```bash
+# Buat database dulu
+sudo -u postgres psql -c "CREATE DATABASE crowdfunding;"
+```
+
+#### Test koneksi database:
+```bash
+sudo -u postgres psql -d crowdfunding -c "SELECT 1;"
+```
+
+### Tips VPS:
+
+1. **Gunakan user postgres saja** untuk menghindari masalah authentication
+2. **Selalu gunakan `sudo -u postgres`** sebelum perintah psql
+3. **Backup secara berkala** dengan timestamp
+4. **Monitor disk space** untuk database
+5. **Restart aplikasi** setelah update database: `pm2 restart crowdfunding` 
