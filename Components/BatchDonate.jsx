@@ -17,14 +17,14 @@ const BatchDonate = () => {
 
     // Fetch ETH price
     useEffect(() => {
-        const fetchEthPrice = async () => {
-            try {
-                const price = await getEthPrice();
-                setEthPrice(price);
-            } catch (error) {
+    const fetchEthPrice = async () => {
+        try {
+            const price = await getEthPrice();
+            setEthPrice(price);
+        } catch (error) {
                 setEthPrice(2500);
-            }
-        };
+        }
+    };
         fetchEthPrice();
     }, []);
 
@@ -35,12 +35,12 @@ const BatchDonate = () => {
             if (activeContract !== 'optimized' && activeContract !== 'batch-processing') {
                 switchContract('optimized');
             }
-            const data = await getCampaigns();
-            // Filter active campaigns (not expired)
+                const data = await getCampaigns();
+                // Filter active campaigns (not expired)
             const active = data.filter(campaign => {
-                const deadline = new Date(campaign.deadline).getTime();
-                return deadline > Date.now();
-            });
+                    const deadline = new Date(campaign.deadline).getTime();
+                    return deadline > Date.now();
+                });
             setCampaigns(active);
         };
         fetchCampaigns();
@@ -94,8 +94,27 @@ const BatchDonate = () => {
         setSuccessMsg('');
         if (!isValid) {
             setError('Please enter valid amounts for all selected campaigns.');
+                return;
+            }
+
+        // Validasi tambahan: pastikan semua campaign masih aktif
+        const now = Date.now();
+        const expiredCampaigns = selectedCampaigns.filter(campaignId => {
+            const campaign = campaigns.find(c => c.pId === campaignId);
+            if (!campaign) return true; // Campaign tidak ditemukan
+            const deadline = new Date(campaign.deadline).getTime();
+            return deadline <= now;
+        });
+        
+        if (expiredCampaigns.length > 0) {
+            const expiredTitles = expiredCampaigns.map(id => {
+                const campaign = campaigns.find(c => c.pId === id);
+                return campaign ? campaign.title : `Campaign ${id}`;
+            });
+            setError(`Campaign(s) expired: ${expiredTitles.join(', ')}. Please refresh and select active campaigns only.`);
             return;
         }
+        
         setLoading(true);
         try {
             const campaignIds = selectedCampaigns.map(id => parseInt(id));
@@ -133,7 +152,7 @@ const BatchDonate = () => {
     }, [successMsg]);
 
     return (
-        <div className="p-4 bg-white rounded-xl mb-6">
+        <div className="bg-white rounded-xl mb-6">
             <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
                 <span role="img" aria-label="batch">📦</span> Batch Donate
             </h2>
@@ -165,7 +184,7 @@ const BatchDonate = () => {
                                 <label htmlFor={`campaign-${campaign.pId}`} className="font-medium text-lg flex-1 cursor-pointer">
                                     {campaign.title}
                                 </label>
-                            </div>
+                                    </div>
                             <div className="text-sm text-gray-600 mb-1">Target: {campaign.target} ETH</div>
                             <div className="text-sm text-gray-600 mb-1">Collected: {campaign.amountCollected} ETH</div>
                             <div className="text-xs text-gray-400 mb-2">{formatDeadline(campaign.deadline)}</div>
@@ -184,15 +203,15 @@ const BatchDonate = () => {
                                         ))}
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <input
-                                            type="number"
-                                            value={amounts[campaign.pId] || ''}
-                                            onChange={(e) => handleAmountChange(campaign.pId, e.target.value)}
-                                            placeholder="Amount in ETH"
+                                    <input
+                                        type="number"
+                                        value={amounts[campaign.pId] || ''}
+                                        onChange={(e) => handleAmountChange(campaign.pId, e.target.value)}
+                                        placeholder="Amount in ETH"
                                             className={`w-48 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${!amounts[campaign.pId] || isNaN(parseFloat(amounts[campaign.pId])) || parseFloat(amounts[campaign.pId]) <= 0 ? 'border-red-300 focus:ring-red-200' : 'border-blue-300 focus:ring-blue-200'}`}
-                                            min="0"
+                                        min="0"
                                             step="0.0001"
-                                        />
+                                    />
                                         {amounts[campaign.pId] && (
                                             <button
                                                 type="button"
@@ -202,10 +221,10 @@ const BatchDonate = () => {
                                             >
                                                 &times;
                                             </button>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
+                    </div>
+                )}
                         </div>
                     );
                 })}
@@ -218,15 +237,15 @@ const BatchDonate = () => {
                     <span className="font-medium text-gray-700">Total: {totalETH.toFixed(4)} ETH</span>
                     <span className="font-medium text-gray-500">(~${(totalETH * ethPrice).toFixed(2)})</span>
                 </div>
-                <button
-                    onClick={handleBatchDonate}
+            <button
+                onClick={handleBatchDonate}
                     disabled={!isValid || loading}
                     className={`px-6 py-2 rounded text-white font-semibold transition-all duration-200 ${!isValid || loading ? 'bg-blue-300 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
-                >
+            >
                     {loading ? (
                         <span className="flex items-center gap-2"><span className="animate-spin h-4 w-4 border-b-2 border-white rounded-full"></span> Processing...</span>
                     ) : 'Donate Batch'}
-                </button>
+            </button>
             </div>
         </div>
     );

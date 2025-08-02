@@ -25,8 +25,6 @@ const NavBar = () => {
   }, []);
 
   const menuList = [
-    { name: "Optimalisasi Variabel", path: "/variable-packing" },
-    { name: "Penggabungan Transaksi", path: "/batch-processing" },
     { name: "About", path: "/about" },
     { name: "Statistik Gasfee", path: "/gas-stats" }
   ];
@@ -65,7 +63,7 @@ const NavBar = () => {
               );
             })}
             
-            {/* Dropdown untuk Optimized dan Original */}
+            {/* Dropdown untuk Optimized, Original, Optimalisasi Variabel, Penggabungan Transaksi */}
             <div
               ref={dropdownRef}
               className="relative"
@@ -74,10 +72,10 @@ const NavBar = () => {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="px-3 py-2 rounded-md text-sm font-medium text-gray-300 hover:text-white hover:bg-black focus:outline-none"
               >
-                Lainnya
+                Metode
               </button>
               <div 
-                className={`${isDropdownOpen ? 'block' : 'hidden'} absolute right-0 top-[calc(100%+8px)] w-48 bg-black rounded-md shadow-lg py-1 z-20`}
+                className={`${isDropdownOpen ? 'block' : 'hidden'} absolute right-0 top-[calc(100%+8px)] w-56 bg-black rounded-md shadow-lg py-1 z-20`}
               >
                 <Link
                   href="/"
@@ -92,6 +90,20 @@ const NavBar = () => {
                   onClick={() => setIsDropdownOpen(false)}
                 >
                   Original
+                </Link>
+                <Link
+                  href="/variable-packing"
+                  className="block px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  Optimalisasi Variabel
+                </Link>
+                <Link
+                  href="/batch-processing"
+                  className="block px-4 py-3 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  Penggabungan Transaksi
                 </Link>
               </div>
             </div>
@@ -145,6 +157,20 @@ const NavBar = () => {
                       onClick={() => setIsDropdownOpen(false)}
                     >
                       Original
+                    </Link>
+                    <Link
+                      href="/variable-packing"
+                      className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Optimalisasi Variabel
+                    </Link>
+                    <Link
+                      href="/batch-processing"
+                      className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Penggabungan Transaksi
                     </Link>
                   </div>
                 </div>

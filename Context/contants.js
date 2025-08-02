@@ -13,12 +13,12 @@ import unoptimizedABI from "./unoptimized.json";
 
 export const CONTRACTS = {
     "original": {
-      address: "0x76779258bc70f0ec54763b42e74b26c9c175ed32",
+      address: "0x27832a624c29dfbe6e9be78bedfe9ad38714b596",
       abi: unoptimizedABI,
       name: "Original"
     },
     "variable-packing": {
-      address: "0x46b5C01774f223b1249A06788B101c7B6eE77bc5",
+      address: "0xd497DE106Bb8878A8E079F3b99F05Da55f16Ce57",
       abi: packingOnlyABI,
       name: "Variable Packing"
     },
@@ -28,7 +28,7 @@ export const CONTRACTS = {
       name: "Batch Processing"
     },
     "optimized": {
-      address: "0x8FA5fD1381877C6A3F24B181ADbdD579865e7585",
+      address: "0xb74f2fd48f0f07057e341f247750c9998acd35bf",
       abi: optimizedABI,
       name: "Optimized"
     }

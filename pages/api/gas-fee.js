@@ -210,24 +210,30 @@ export default async function handler(req, res) {
 
       // PATCH: Gabungkan single donation (tanpa batch_id) dan batch donation (batch_index === 0) untuk statistik optimized & batchProcessing
       ["batchProcessing", "optimized"].forEach((key) => {
-        if (groupedData[key].length > 0) {
-          // Ambil semua single donation (tanpa batch_id)
-          const singleRows = result.rows.filter(
-            r => r.normalized_version === key && !r.batch_id
-          );
-          // Ambil satu gas_fee per batch donation (batch_index === 0)
-          const batchRows = result.rows.filter(
-            r => r.normalized_version === key && r.batch_id && r.batch_index === 0
-          );
-          const allRows = [...singleRows, ...batchRows];
-          const totalGasFee = allRows.reduce((sum, r) => sum + parseFloat(r.gas_fee), 0);
-          const avgGasFee = allRows.length > 0 ? totalGasFee / allRows.length : 0;
-          groupedData[key] = [{
-            avg_gas_fee: avgGasFee.toFixed(18),
-            total_gas_fee: totalGasFee.toFixed(18),
-            transaction_count: allRows.length
-          }];
-        }
+        // Ambil semua single donation (tanpa batch_id)
+        const singleRows = result.rows.filter(
+          r => r.normalized_version === key && !r.batch_id
+        );
+        // Ambil satu gas_fee per batch donation (batch_index === 0)
+        const batchRows = result.rows.filter(
+          r => r.normalized_version === key && r.batch_id && r.batch_index === 0
+        );
+        // Untuk gas fee calculation: gunakan single + batch (batch_index === 0)
+        const allRowsForGasFee = [...singleRows, ...batchRows];
+        const totalGasFee = allRowsForGasFee.reduce((sum, r) => sum + parseFloat(r.gas_fee), 0);
+        const avgGasFee = allRowsForGasFee.length > 0 ? totalGasFee / allRowsForGasFee.length : 0;
+        
+        // Untuk transaction count: hitung SEMUA transaksi di database (termasuk batch_index > 0)
+        const allTransactions = result.rows.filter(
+          r => r.normalized_version === key
+        );
+        
+        
+        groupedData[key] = [{
+          avg_gas_fee: (totalGasFee / allTransactions.length).toFixed(18),
+          total_gas_fee: totalGasFee.toFixed(18),
+          transaction_count: allTransactions.length  // Hitung semua transaksi
+        }];
       });
       // END PATCH
 

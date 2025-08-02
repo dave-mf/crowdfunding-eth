@@ -1,57 +1,34 @@
 import React from "react";
 
 const Footer = () => {
-  const productList = ["Market", "ERC20 Token", "Donation"];
-  const contactList = [
-    "support@crowdfunding.com",
-    "info@crowdfunding.com",
-    "Contact Us",
-  ];
-  const usefullLink = ["Home", "About Us", "Company Bio"];
   return (
-    <footer class="text-center text-white backgroundMain lg:text-left">
-      <div class="mx-6 py-10 text-center md:text-left">
-        <div class="grid-1 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-          <div class="">
-            <h6 class="mb-4 flex items-center justify-center font-semibold uppercase md:justify-start">Crowdfunding</h6>
-            <p>Here you can use rows and columns to organize your footer content.
-              Lorem ipsum dolor sit amet, consectetur adipisicing elit.
-            </p>
-          </div>
-          <div class="">
-            <h6 class="mb-4 flex justify-center font-semibold uppercase md:justify-start">Products</h6>
-            {productList.map((el, i) => (
-              <p class="mb-4" key={i + 1}>
-                <a href="#!">{el}</a>
-              </p>
-            ))}
-          </div>
-          <div class="">
-            <h6 class="mb-4 flex justify-center font-semibold uppercase md:justify-start">Useful Links</h6>
-            {usefullLink.map((el, i) => (
-              <p class="mb-4" key={i + 1}>
-                <a href="#!">{el}</a>
-              </p>
-            ))}
-          </div>
-          <div class="">
-            <h6 class="mb-4 flex justify-center font-semibold uppercase md:justify-start">Contact</h6>
-            {contactList.map((el, i) => (
-              <p class="mb-4" key={i + 1}>
-                <a href="#!">{el}</a>
-              </p>
-            ))}
-          </div>
+    <footer className="text-white bg-neutral-900 py-10 px-6">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20">
+        {/* Deskripsi Project */}
+        <div className="text-left">
+          <h6 className="mb-4 font-semibold uppercase">Crowdfunding</h6>
+          <p>
+            Crowdfunding platform for supporting projects transparently and efficiently on blockchain. Join, donate, and make an impact!
+          </p>
+        </div>
+        {/* Link Navigasi */}
+        <div className="text-left md:pl-12">
+          <h6 className="mb-4 font-semibold uppercase">Navigation</h6>
+          <ul className="space-y-2">
+            <li><a href="/about" className="hover:underline">About</a></li>
+            <li><a href="/gas-stats" className="hover:underline">Statistik Gasfee</a></li>
+            <li><a href="/" className="hover:underline">Optimized</a></li>
+            <li><a href="/original" className="hover:underline">Original</a></li>
+            <li><a href="/variable-packing" className="hover:underline">Optimalisasi Variabel</a></li>
+            <li><a href="/batch-processing" className="hover:underline">Penggabungan Transaksi</a></li>
+          </ul>
         </div>
       </div>
-      <div class="backgroundMain p-6 text-center">
-        <span>&copy; 2025 Copyright : </span>
-          <a class="font-semibold" href="/">
-            Crowdfunding
-          </a>
+      <div className="mt-8 text-center text-gray-400 text-sm">
+        &copy; 2025 Crowdfunding. All rights reserved.
       </div>
     </footer>
-  )
+  );
 };
 
 export default Footer;

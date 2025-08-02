@@ -130,6 +130,11 @@ To manage the database:
    npm run init-db
    ```
 
+**Catatan:** Struktur tabel `gas_fee_logs` kini memiliki kolom tambahan:
+- `batch_id` (string, nullable): ID unik batch donation (biasanya transaction hash)
+- `batch_index` (integer, nullable): Urutan campaign dalam batch
+- `batch_size` (integer, nullable): Total campaign dalam batch
+
 ## Smart Contract Versions
 
 The platform supports multiple contract implementations for gas optimization:
@@ -190,3 +195,11 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Tailwind CSS for the UI framework
 - Next.js team for the amazing framework
 - Binance for providing reliable ETH price data
+
+## Update 2025
+
+- **Batch Donation Logging**: Setiap batch donation kini mencatat `batch_id`, `batch_index`, dan `batch_size` di database untuk analitik yang lebih akurat.
+- **Statistik Gas Fee**: Statistik batch hanya dihitung satu kali per batch, dan sudah menggabungkan single & batch donation untuk semua versi kontrak.
+- **Filter Statistik**: Filter campaign di halaman statistik dihapus, kini hanya tersedia filter contract version dan time range.
+- **UI/UX Batch Donate**: Tampilan batch donate dirombak total, dengan card grid, badge template amount, summary bar, dan notifikasi interaktif.
+- **Input Amount Badge**: Input donasi (single & batch) kini dilengkapi badge template amount untuk UX lebih baik.

@@ -92,7 +92,7 @@ const index = () => {
       </div>
       
       {(activeContract === "optimized" || activeContract === "batch-processing") && (
-        <div className="mt-8 px-20">
+        <div className="px-4 py-12 mx-auto max-w-screen-xl">
           <BatchDonate />
         </div>
       )}

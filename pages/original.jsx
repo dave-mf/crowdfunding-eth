@@ -70,7 +70,7 @@ const Original = () => {
 
         <div className="mt-8">
           {!allcampaign ? (
-            <div className="text-center py-8 text-gray-500">Loading campaigns...</div>
+            <div className="text-center py-8 text-gray-500">Loading original.jsx campaigns...</div>
           ) : (
             <Card 
               title="All Listed Campaign" 
@@ -80,7 +80,7 @@ const Original = () => {
             />
           )}
           {!usercampaign ? (
-            <div className="text-center py-8 text-gray-400">Loading your campaigns...</div>
+            <div className="text-center py-8 text-gray-400">Loading your original.jsx campaigns...</div>
           ) : (
             <Card 
               title="Your Created Campaign" 

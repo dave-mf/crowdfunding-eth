@@ -18,12 +18,17 @@ const Hero = ({ createCampaign }) => {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center px-4 py-16 md:py-0 bg-gradient-to-b from-[#252525] to-[#181717]">
+    <section className="relative min-h-[94vh] flex items-center justify-center px-4 py-16 md:py-0 bg-gradient-to-b from-[#252525] to-[#181717]">
       <div className="max-w-6xl w-full text-center">
-        <h1 className="text-white text-4xl md:text-5xl font-semibold mb-6">
+        {/* Badge Trusted Platforms */}
+        <div className="inline-flex items-center px-5 py-2 border border-white rounded-full mb-12">
+          <span className="text-white font-medium text-base">Trusted Platforms</span>
+          <span className="ml-2 text-white text-lg font-bold">©</span>
+        </div>
+        <h1 className="text-white text-4xl md:text-5xl font-medium mb-6">
           Support Projects, Join a Caring Community
         </h1>
-        <p className="text-gray-400 text-md md:text-xl mb-16">
+        <p className="text-gray-400 text-md md:text-xl font-light mb-16">
           With the power of community support, your vision can become a reality.
           <br />
           Let's collaborate and make a positive impact together!
