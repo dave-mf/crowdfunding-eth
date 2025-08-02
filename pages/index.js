@@ -3,7 +3,7 @@ import React, { useEffect, useContext, useState } from "react";
 //INTERNAL IMPORT
 import { MultiContractContext } from "../Context/MultiContractContext";
 import { Hero, Card, PupUp } from "../Components";
-import BatchDonate from "../components/BatchDonate";
+import BatchDonate from "../Components/BatchDonate";
 import { getEthPrice } from "../utils/ethPrice";
 
 const index = () => {

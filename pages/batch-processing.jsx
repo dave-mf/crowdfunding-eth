@@ -1,7 +1,7 @@
 import React, { useEffect, useContext, useState } from "react";
 import { MultiContractContext } from "../Context/MultiContractContext";
 import { Hero, Card, PupUp } from "../Components";
-import BatchDonate from "../components/BatchDonate";
+import BatchDonate from "../Components/BatchDonate";
 import Link from "next/link";
 import { getEthPrice } from "../utils/ethPrice";
 
