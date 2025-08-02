@@ -6,6 +6,18 @@ import { CONTRACTS } from "./contants";
 // Create context
 export const MultiContractContext = createContext();
 
+// Web3Modal configuration for mobile compatibility
+const web3ModalConfig = {
+  network: "sepolia",
+  cacheProvider: true,
+  disableInjectedProvider: false,
+  providerOptions: {
+    walletconnect: {
+      package: null, // Disable WalletConnect for now
+    }
+  }
+};
+
 // Fetch contract function
 const fetchContract = (address, abi, signerOrProvider) =>
     new ethers.Contract(address, abi, signerOrProvider);
@@ -137,7 +149,7 @@ export const MultiContractProvider = ({ children }) => {
     // Create campaign with gas tracking
     const createCampaign = async (campaign) => {
         const { title, description, amount, deadline } = campaign;
-        const web3Modal = new Wenb3Modal();
+        const web3Modal = new Wenb3Modal(web3ModalConfig);
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);
         const signer = provider.getSigner();
@@ -180,7 +192,7 @@ export const MultiContractProvider = ({ children }) => {
 
     // Get campaigns
     const getCampaigns = async () => {
-        const web3Modal = new Wenb3Modal();
+        const web3Modal = new Wenb3Modal(web3ModalConfig);
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);
         const contract = fetchContract(
@@ -209,7 +221,7 @@ export const MultiContractProvider = ({ children }) => {
 
     // Get user campaigns
     const getUserCampaigns = async () => {
-        const web3Modal = new Wenb3Modal();
+        const web3Modal = new Wenb3Modal(web3ModalConfig);
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);
         const contract = fetchContract(
@@ -254,7 +266,7 @@ export const MultiContractProvider = ({ children }) => {
 
     // Get donations
     const getDonations = async (pId) => {
-        const web3Modal = new Wenb3Modal();
+        const web3Modal = new Wenb3Modal(web3ModalConfig);
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);
         const contract = fetchContract(
@@ -376,7 +388,7 @@ export const MultiContractProvider = ({ children }) => {
 
     // Donate with gas tracking
     const donate = async (pId, amount) => {
-        const web3Modal = new Wenb3Modal();
+        const web3Modal = new Wenb3Modal(web3ModalConfig);
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);
         const signer = provider.getSigner();
@@ -438,7 +450,7 @@ export const MultiContractProvider = ({ children }) => {
 
     // Batch donate with gas tracking
     const batchDonate = async (ids, amounts) => {
-        const web3Modal = new Wenb3Modal();
+        const web3Modal = new Wenb3Modal(web3ModalConfig);
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);
         const signer = provider.getSigner();
@@ -652,7 +664,7 @@ export const MultiContractProvider = ({ children }) => {
     // Disconnect wallet
     const disconnectWallet = async () => {
         try {
-            const web3Modal = new Wenb3Modal();
+            const web3Modal = new Wenb3Modal(web3ModalConfig);
             // Clear the cached provider
             if (web3Modal.cachedProvider) {
                 await web3Modal.clearCachedProvider();
