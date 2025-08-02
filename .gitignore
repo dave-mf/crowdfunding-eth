@@ -48,3 +48,7 @@ typechain-types/
 # Database
 *.sqlite
 *.sqlite3 .next/
+
+# Exclude semua backup kecuali initial
+/backups/*
+!/backups/crowdfunding_db_init.sql
