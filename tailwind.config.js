@@ -19,7 +19,7 @@ module.exports = {
         'nav-dark': '#252525',
       },
       fontFamily: {
-        sans: ['var(--font-urbanist)'],
+        sans: ['Urbanist', 'sans-serif'],
       },
     },
   },
