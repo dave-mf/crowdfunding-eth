@@ -8,19 +8,14 @@ export const MultiContractContext = createContext();
 
 // Web3Modal configuration for mobile compatibility
 const web3ModalConfig = {
-  network: "sepolia",
-  cacheProvider: true,
-  disableInjectedProvider: false,
-  providerOptions: {
-    walletconnect: {
-      package: require("@walletconnect/web3-provider"),
-      options: {
-        rpc: {
-          11155111: "https://sepolia.infura.io" // Sepolia RPC
-        }
+    network: "sepolia",
+    cacheProvider: true,
+    disableInjectedProvider: false,
+    providerOptions: {
+      walletconnect: {
+        package: null, // Disable WalletConnect for now
       }
     }
-  }
 };
 
 // Fetch contract function
