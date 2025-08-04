@@ -13,7 +13,12 @@ const web3ModalConfig = {
   disableInjectedProvider: false,
   providerOptions: {
     walletconnect: {
-      package: null, // Disable WalletConnect for now
+      package: require("@walletconnect/web3-provider"),
+      options: {
+        rpc: {
+          11155111: "https://sepolia.infura.io" // Sepolia RPC
+        }
+      }
     }
   }
 };
@@ -192,6 +197,25 @@ export const MultiContractProvider = ({ children }) => {
 
     // Get campaigns
     const getCampaigns = async () => {
+        if (typeof window === "undefined" || !window.ethereum) {
+            alert("Please open this site in MetaMask mobile browser or install MetaMask.");
+            return [];
+        }
+        // Pastikan wallet sudah connect
+        let accounts = await window.ethereum.request({ method: "eth_accounts" });
+        if (!accounts || accounts.length === 0) {
+            accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+            if (!accounts || accounts.length === 0) {
+                alert("Please connect your wallet first.");
+                return [];
+            }
+        }
+        // Pastikan network Sepolia
+        const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+        if (chainId !== '0xaa36a7') { // Sepolia chainId
+            alert("Please switch your MetaMask network to Sepolia.");
+            return [];
+        }
         const web3Modal = new Wenb3Modal(web3ModalConfig);
         const connection = await web3Modal.connect();
         const provider = new ethers.providers.Web3Provider(connection);

@@ -47,6 +47,29 @@ const index = () => {
   }, [activeContract, campaignsUpdatedFlag]);
 
   useEffect(() => {
+    if (typeof window !== "undefined" && window.ethereum) {
+      const fetchData = async () => {
+        const allData = await getCampaigns();
+        const userData = await getUserCampaigns();
+        setAllcampaign(allData);
+        setUsercampaign(userData);
+      };
+      const handleAccountsChanged = () => {
+        fetchData();
+      };
+      const handleChainChanged = () => {
+        fetchData();
+      };
+      window.ethereum.on("accountsChanged", handleAccountsChanged);
+      window.ethereum.on("chainChanged", handleChainChanged);
+      return () => {
+        window.ethereum.removeListener("accountsChanged", handleAccountsChanged);
+        window.ethereum.removeListener("chainChanged", handleChainChanged);
+      };
+    }
+  }, [getCampaigns, getUserCampaigns]);
+
+  useEffect(() => {
     fetchEthPrice();
   }, []);
 
