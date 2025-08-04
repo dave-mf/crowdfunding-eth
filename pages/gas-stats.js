@@ -362,107 +362,224 @@ const GasStats = () => {
               </div>
             </div>
 
-            {/* Transaction History Table */}
+            {/* Transaction History - Mobile Responsive */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
               <div className="px-4 py-5 sm:px-6">
                 <h3 className="text-lg leading-6 font-medium text-gray-900">Transaction History</h3>
               </div>
-              <div className="border-t border-gray-200">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Campaign</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contract Version</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gas Fee</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gas Fee (USD)</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {transactions.map((tx) => {
-                      const campaignTitle = tx.campaign_title || `Campaign #${tx.campaign_id}`;
-                      return (
-                        <tr key={tx.id}>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            <div className="font-medium">{campaignTitle}</div>
-                            <div className="text-gray-500">ID: {tx.campaign_id}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tx.method_name || 'unknown'}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tx.contract_version}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatGasFee(tx.gas_fee)}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatGasFeeUSD(tx.gas_fee)}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                              tx.is_success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                            }`}>
-                              {tx.is_success ? 'Success' : 'Failed'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDate(tx.timestamp)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              
+              {/* Desktop Table View */}
+              <div className="hidden md:block border-t border-gray-200">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Campaign</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Method</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Contract Version</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gas Fee</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Gas Fee (USD)</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {transactions.map((tx) => {
+                        const campaignTitle = tx.campaign_title || `Campaign #${tx.campaign_id}`;
+                        return (
+                          <tr key={tx.id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <div className="font-medium">{campaignTitle}</div>
+                              <div className="text-gray-500">ID: {tx.campaign_id}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{tx.method_name || 'unknown'}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">{tx.contract_version}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatGasFee(tx.gas_fee)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">{formatGasFeeUSD(tx.gas_fee)}</td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                tx.is_success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              }`}>
+                                {tx.is_success ? 'Success' : 'Failed'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatDate(tx.timestamp)}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
-              {/* Pagination */}
-              <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                <div className="flex-1 flex justify-between sm:hidden">
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    Previous
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                    disabled={currentPage === totalPages}
-                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                  >
-                    Next
-                  </button>
+              {/* Mobile Card View */}
+              <div className="md:hidden border-t border-gray-200">
+                <div className="divide-y divide-gray-200">
+                  {transactions.map((tx) => {
+                    const campaignTitle = tx.campaign_title || `Campaign #${tx.campaign_id}`;
+                    return (
+                      <div key={tx.id} className="p-4 hover:bg-gray-50 transition-colors">
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-medium text-gray-900 truncate">{campaignTitle}</h4>
+                            <p className="text-xs text-gray-500">#{tx.campaign_id}</p>
+                          </div>
+                          <span className={`ml-2 flex-shrink-0 px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            tx.is_success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {tx.is_success ? 'Success' : 'Failed'}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>
+                            <span className="text-gray-500 text-xs">Method:</span>
+                            <p className="text-gray-900 font-medium">{tx.method_name || 'unknown'}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 text-xs">Version:</span>
+                            <p className="text-gray-900 font-medium">{tx.contract_version}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 text-xs">Gas Fee:</span>
+                            <p className="text-gray-900 font-medium">{formatGasFee(tx.gas_fee)}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 text-xs">USD:</span>
+                            <p className="text-gray-900 font-medium">{formatGasFeeUSD(tx.gas_fee)}</p>
+                          </div>
+                        </div>
+                        
+                        <div className="mt-2">
+                          <span className="text-gray-500 text-xs">Date:</span>
+                          <p className="text-gray-900 text-sm">{formatDate(tx.timestamp)}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm text-gray-700">
-                      Showing page <span className="font-medium">{currentPage}</span> of{' '}
-                      <span className="font-medium">{totalPages}</span>
-                    </p>
+              </div>
+
+              {/* Pagination - Responsif untuk Semua Viewport */}
+              <div className="bg-white px-4 py-3 border-t border-gray-200">
+                <div className="flex flex-col items-center space-y-3">
+                  {/* Info Pagination */}
+                  <div className="text-sm text-gray-700">
+                    Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
+                    <span className="hidden sm:inline"> • {transactions.length} total results</span>
                   </div>
-                  <div>
-                    <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                      <button
-                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                      >
-                        Previous
-                      </button>
-                      {totalPages > 0 && [...Array(totalPages)].map((_, i) => (
+                  
+                  {/* Pagination Controls - Responsif */}
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Smart pagination responsif */}
+                    {totalPages <= 5 ? (
+                      // Tampilkan semua halaman untuk <= 5
+                      [...Array(totalPages)].map((_, i) => (
                         <button
                           key={i + 1}
                           onClick={() => setCurrentPage(i + 1)}
-                          className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                          className={`px-3 py-2 text-sm border rounded-md min-w-[2rem] transition-colors ${
                             currentPage === i + 1
-                              ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600'
-                              : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                           }`}
                         >
                           {i + 1}
                         </button>
-                      ))}
-                      <button
-                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                      >
-                        Next
-                      </button>
-                    </nav>
+                      ))
+                    ) : (
+                      // Smart pagination untuk > 5 halaman
+                      <>
+                        {/* Halaman pertama */}
+                        <button
+                          onClick={() => setCurrentPage(1)}
+                          className={`px-3 py-2 text-sm border rounded-md min-w-[2rem] transition-colors ${
+                            currentPage === 1
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          1
+                        </button>
+
+                        {/* Ellipsis kiri - hidden di mobile */}
+                        {currentPage > 3 && <span className="hidden sm:inline px-1 text-gray-500">...</span>}
+
+                        {/* Angka sekitar halaman aktif */}
+                         {(() => {
+                           const pages = [];
+                           let start, end;
+                           
+                           if (totalPages <= 7) {
+                             start = 2;
+                             end = totalPages - 1;
+                           } else {
+                             if (currentPage <= 3) {
+                               start = 2;
+                               end = 4;
+                             } else if (currentPage >= totalPages - 2) {
+                               start = totalPages - 3;
+                               end = totalPages - 1;
+                             } else {
+                               start = currentPage - 1;
+                               end = currentPage + 1;
+                             }
+                           }
+
+                           for (let i = start; i <= end; i++) {
+                             pages.push(
+                               <button
+                                 key={i}
+                                 onClick={() => setCurrentPage(i)}
+                                 className={`px-3 py-2 text-sm border rounded-md min-w-[2rem] transition-colors ${
+                                   currentPage === i
+                                     ? 'bg-indigo-600 text-white border-indigo-600'
+                                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                                 }`}
+                               >
+                                 {i}
+                               </button>
+                             );
+                           }
+                           return pages;
+                         })()}
+
+                        {/* Ellipsis kanan - hidden di mobile */}
+                        {currentPage < totalPages - 2 && <span className="hidden sm:inline px-1 text-gray-500">...</span>}
+
+                        {/* Halaman terakhir */}
+                        <button
+                          onClick={() => setCurrentPage(totalPages)}
+                          className={`px-3 py-2 text-sm border rounded-md min-w-[2rem] transition-colors ${
+                            currentPage === totalPages
+                              ? 'bg-indigo-600 text-white border-indigo-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
+
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                      className="p-2 text-sm border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -474,4 +591,4 @@ const GasStats = () => {
   );
 };
 
-export default GasStats; 
+export default GasStats;
