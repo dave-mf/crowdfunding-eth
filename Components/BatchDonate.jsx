@@ -14,6 +14,7 @@ const BatchDonate = () => {
     const [error, setError] = useState('');
     const [ethPrice, setEthPrice] = useState(2500);
     const [successMsg, setSuccessMsg] = useState('');
+    const [idrRate, setIdrRate] = useState(null);
 
     // Fetch ETH price
     useEffect(() => {
@@ -26,6 +27,25 @@ const BatchDonate = () => {
         }
     };
         fetchEthPrice();
+    }, []);
+
+    // Fetch IDR rate dari API dan tampilkan di console log
+    useEffect(() => {
+      const fetchIdrRate = async () => {
+        try {
+          const response = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+          const data = await response.json();
+          if (data && data.rates && data.rates.IDR) {
+            setIdrRate(data.rates.IDR);
+          } else {
+            console.log("❌ No IDR rate found in response");
+            setIdrRate(16000); // gunakan fallback jika perlu
+          }
+        } catch (error) {
+          setIdrRate(16000); // fallback rate
+        }
+      };
+      fetchIdrRate();
     }, []);
 
     // Fetch campaigns on mount
@@ -94,8 +114,8 @@ const BatchDonate = () => {
         setSuccessMsg('');
         if (!isValid) {
             setError('Please enter valid amounts for all selected campaigns.');
-                return;
-            }
+            return;
+        }
 
         // Validasi tambahan: pastikan semua campaign masih aktif
         const now = Date.now();
@@ -127,7 +147,12 @@ const BatchDonate = () => {
             setSelectedCampaigns([]);
             setAmounts({});
         } catch (e) {
-            setError(e.message || 'Failed to process batch donation');
+            // Tangani error apabila user membatalkan transaksi di MetaMask
+            if (e.code === "ACTION_REJECTED") {
+                setError("Transaction cancelled by user");
+            } else {
+                setError(e.message || 'Failed to process batch donation');
+            }
         } finally {
             setLoading(false);
         }
@@ -151,6 +176,9 @@ const BatchDonate = () => {
         }
     }, [successMsg]);
 
+    // Hitung total IDR berdasarkan totalETH, ethPrice, dan idrRate bila tersedia
+    const totalIdr = (ethPrice && idrRate) ? (totalETH * ethPrice * idrRate).toFixed(0) : "0";
+
     return (
         <div className="bg-white rounded-xl mb-6">
             <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
@@ -171,62 +199,118 @@ const BatchDonate = () => {
                     <div className="col-span-full text-gray-500">No active campaigns available for batch donation.</div>
                 ) : campaigns.map((campaign) => {
                     const selected = selectedCampaigns.includes(campaign.pId);
+                    const isFundingComplete = parseFloat(campaign.amountCollected) >= parseFloat(campaign.target);
+                    const progress = (parseFloat(campaign.amountCollected) / parseFloat(campaign.target)) * 100;
+                    const progressPercentage = Math.min(progress, 100);
                     return (
-                        <div key={campaign.pId} className={`rounded-lg shadow-md p-4 border transition-all duration-200 ${selected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:border-blue-300'}`}>
-                            <div className="flex items-center mb-2">
-                                <input
-                                    type="checkbox"
-                                    id={`campaign-${campaign.pId}`}
-                                    checked={selected}
-                                    onChange={() => handleCampaignSelect(campaign.pId)}
-                                    className="h-4 w-4 text-blue-600 mr-2"
-                                />
-                                <label htmlFor={`campaign-${campaign.pId}`} className="font-medium text-lg flex-1 cursor-pointer">
-                                    {campaign.title}
-                                </label>
-                                    </div>
-                            <div className="text-sm text-gray-600 mb-1">Target: {campaign.target} ETH</div>
-                            <div className="text-sm text-gray-600 mb-1">Collected: {campaign.amountCollected} ETH</div>
-                            <div className="text-xs text-gray-400 mb-2">{formatDeadline(campaign.deadline)}</div>
-                            {selected && (
-                                <div className="mt-2">
-                                    <div className="flex gap-2 mb-2 flex-wrap">
-                                        {AMOUNT_TEMPLATES.map((amt) => (
-                                            <button
-                                                key={amt}
-                                                type="button"
-                                                className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200 text-xs hover:bg-blue-100 focus:outline-none"
-                                                onClick={() => handleBadgeClick(campaign.pId, amt)}
-                                            >
-                                                {amt} ETH
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                    <input
-                                        type="number"
-                                        value={amounts[campaign.pId] || ''}
-                                        onChange={(e) => handleAmountChange(campaign.pId, e.target.value)}
-                                        placeholder="Amount in ETH"
-                                            className={`w-48 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${!amounts[campaign.pId] || isNaN(parseFloat(amounts[campaign.pId])) || parseFloat(amounts[campaign.pId]) <= 0 ? 'border-red-300 focus:ring-red-200' : 'border-blue-300 focus:ring-blue-200'}`}
-                                        min="0"
-                                            step="0.0001"
-                                    />
-                                        {amounts[campaign.pId] && (
-                                            <button
-                                                type="button"
-                                                className="text-gray-400 hover:text-red-500 text-lg"
-                                                onClick={() => handleAmountChange(campaign.pId, '')}
-                                                title="Clear"
-                                            >
-                                                &times;
-                                            </button>
-                                )}
+                        <div
+                          key={campaign.pId}
+                          // Jika fully funded, card tidak responsif
+                          onClick={() => {
+                            if (!isFundingComplete) {
+                              handleCampaignSelect(campaign.pId);
+                            }
+                          }}
+                          className={`rounded-lg shadow-md p-4 border transition-all duration-200 ${
+                            isFundingComplete
+                              ? "pointer-events-none opacity-60"
+                              : selected
+                              ? "border-blue-500 ring-2 ring-blue-200"
+                              : "border-gray-200 hover:border-blue-300"
+                          }`}
+                        >
+                          <div className="flex items-center mb-2">
+                            <input
+                              type="checkbox"
+                              id={`campaign-${campaign.pId}`}
+                              checked={selected}
+                              onChange={() => {
+                                if (!isFundingComplete) {
+                                  handleCampaignSelect(campaign.pId);
+                                }
+                              }}
+                              disabled={isFundingComplete}
+                              className="h-4 w-4 text-blue-600 mr-2"
+                            />
+                            <label
+                              htmlFor={`campaign-${campaign.pId}`}
+                              className="font-medium text-lg flex-1 cursor-pointer"
+                            >
+                              {campaign.title}
+                            </label>
+                          </div>
+                          <div className="text-sm text-gray-400 mb-2">{formatDeadline(campaign.deadline)}</div>
+                          
+                          {/* Progress Bar Section */}
+                          <div className="mb-4">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="text-sm font-medium text-gray-700">
+                                {parseFloat(campaign.amountCollected).toFixed(4)} ETH / {parseFloat(campaign.target).toFixed(4)} ETH
+                              </span>
+                              <span className="text-sm font-semibold text-gray-800">
+                                {progressPercentage.toFixed(1)}%
+                              </span>
                             </div>
-                    </div>
-                )}
+                            <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div 
+                                className={`h-2 rounded-full transition-all duration-300 ${
+                                  progressPercentage >= 100 ? 'bg-blue-500' : 'bg-green-500'
+                                }`}
+                                style={{ width: `${progressPercentage}%` }}
+                              ></div>
+                            </div>
+                          </div>
+
+                          {/* Jika card tidak disabled, tampilkan input amount dan badge */}
+                          {!isFundingComplete && selected && (
+                            <div className="mt-2">
+                              <div className="flex gap-2 mb-2 flex-wrap">
+                                {AMOUNT_TEMPLATES.map((amt) => (
+                                  <button
+                                    key={amt}
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation(); // mencegah event naik ke parent
+                                      handleBadgeClick(campaign.pId, amt);
+                                    }}
+                                    className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200 text-xs hover:bg-blue-100 focus:outline-none"
+                                  >
+                                    {amt} ETH
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="number"
+                                  onClick={(e) => e.stopPropagation()}
+                                  value={amounts[campaign.pId] || ''}
+                                  onChange={(e) => handleAmountChange(campaign.pId, e.target.value)}
+                                  placeholder="Amount in ETH"
+                                  className={`w-48 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                                    !amounts[campaign.pId] ||
+                                    isNaN(parseFloat(amounts[campaign.pId])) ||
+                                    parseFloat(amounts[campaign.pId]) <= 0
+                                      ? 'border-red-300 focus:ring-red-200'
+                                      : 'border-blue-300 focus:ring-blue-200'
+                                  }`}
+                                  min="0"
+                                  step="0.0001"
+                                />
+                                {amounts[campaign.pId] && (
+                                  <button
+                                    type="button"
+                                    className="text-gray-400 hover:text-red-500 text-lg"
+                                    onClick={() => handleAmountChange(campaign.pId, '')}
+                                    title="Clear"
+                                  >
+                                    &times;
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                    );
+                      );
                 })}
             </div>
 
@@ -235,7 +319,9 @@ const BatchDonate = () => {
                 <div className="flex items-center gap-4">
                     <span className="font-medium text-gray-700">Selected: {selectedCampaigns.length} campaign</span>
                     <span className="font-medium text-gray-700">Total: {totalETH.toFixed(4)} ETH</span>
-                    <span className="font-medium text-gray-500">(~${(totalETH * ethPrice).toFixed(2)})</span>
+                    <span className="font-medium text-gray-500">
+          (~${(totalETH * ethPrice).toFixed(2)} / Rp.{totalIdr})
+        </span>
                 </div>
             <button
                 onClick={handleBatchDonate}
@@ -251,4 +337,4 @@ const BatchDonate = () => {
     );
 };
 
-export default BatchDonate; 
+export default BatchDonate;

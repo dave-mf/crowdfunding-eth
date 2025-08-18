@@ -12,8 +12,142 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
   const [gasDetails, setGasDetails] = useState(null);
   const [maxFee, setMaxFee] = useState(null);
   const [activeContract, setActiveContract] = useState(null);
+  const [idrRate, setIdrRate] = useState(null);
+  const [transactionAlerts, setTransactionAlerts] = useState([]); // { id, level, message }
 
   const AMOUNT_TEMPLATES = [0.1, 0.01, 0.001, 0.0001];
+
+  // Calculate funding limits
+  const calculateFundingLimits = () => {
+    const target = parseFloat(donate.target) || 0;
+    const raised = parseFloat(donate.amountCollected) || 0;
+    const remainingNeeded = Math.max(target - raised, 0);
+    const progressPercentage = target > 0 ? (raised / target) * 100 : 0;
+    const isFullyFunded = progressPercentage >= 100;
+
+    return {
+      target,
+      raised,
+      remainingNeeded,
+      progressPercentage: Math.min(progressPercentage, 100),
+      isFullyFunded
+    };
+  };
+
+  const fundingData = calculateFundingLimits();
+
+  // Validation for amount input
+  const validateAmount = (inputAmount) => {
+    const numAmount = parseFloat(inputAmount);
+    if (isNaN(numAmount) || numAmount <= 0) return { isValid: false, message: "" };
+    
+    if (fundingData.isFullyFunded) {
+      return { isValid: false, message: "This campaign is already fully funded!" };
+    }
+    
+    if (numAmount > fundingData.remainingNeeded) {
+      return { 
+        isValid: false, 
+        message: `Amount exceeds remaining needed: ${fundingData.remainingNeeded.toFixed(4)} ETH` 
+      };
+    }
+    
+    return { isValid: true, message: "" };
+  };
+
+  const amountValidation = validateAmount(amount);
+
+  // Generate smart amount templates based on remaining funding
+  const generateSmartTemplates = () => {
+    if (fundingData.isFullyFunded) return [];
+    
+    const remaining = fundingData.remainingNeeded;
+    const templates = [];
+    // Misal kamu ingin semua preset di atas disableThreshold dinonaktifkan:
+    const disableThreshold = 0.01; // ganti sesuai keinginan
+    
+    // Tambahkan preset exact remaining (selalu aktif)
+    templates.push({
+      amount: remaining,
+      isValid: true,
+      isExact: true,
+      source: "exact_remaining"
+    });
+    
+    // Fraction amounts dengan tambahan validasi custom
+    if (remaining > 0.001) {
+      const halfAmount = remaining * 0.5;
+      if (halfAmount >= 0.0001 && halfAmount <= remaining) {
+        templates.push({
+          amount: halfAmount,
+          isValid: halfAmount <= disableThreshold, // disable jika melebihi threshold
+          isExact: false,
+          source: "half_remaining"
+        });
+      }
+    }
+    
+    if (remaining > 0.01) {
+      const quarterAmount = remaining * 0.25;
+      if (quarterAmount >= 0.0001 && quarterAmount <= remaining) {
+        templates.push({
+          amount: quarterAmount,
+          isValid: quarterAmount <= disableThreshold,
+          isExact: false,
+          source: "quarter_remaining"
+        });
+      }
+    }
+    
+    if (remaining > 0.1) {
+      const tenthAmount = remaining * 0.1;
+      if (tenthAmount >= 0.0001 && tenthAmount <= remaining) {
+        templates.push({
+          amount: tenthAmount,
+          isValid: tenthAmount <= disableThreshold,
+          isExact: false,
+          source: "tenth_remaining"
+        });
+      }
+    }
+    
+    // Standard amounts, tambahkan validasi tambahan
+    const standardAmounts = [0.0001, 0.001, 0.01, 0.1];
+    standardAmounts.forEach(amt => {
+      const isValid = amt <= remaining && amt <= disableThreshold;
+      const alreadyExists = templates.find(t => Math.abs(t.amount - amt) < 0.0001);
+      
+      
+      if (!alreadyExists) {
+        templates.push({
+          amount: amt,
+          isValid: isValid,
+          isExact: false,
+          source: `standard_${amt}`
+        });
+      }
+    });
+    
+    
+    // Filter keluar preset yang tidak valid
+    const validTemplates = templates.filter(template => template.isValid);
+    
+    // Sorting dan limit
+    const result = validTemplates
+      .sort((a, b) => a.amount - b.amount)
+      .slice(0, 4)
+      .map(template => ({
+        amount: parseFloat(template.amount.toFixed(4)),
+        isValid: template.isValid,
+        isExact: template.isExact,
+        source: template.source
+      }));
+      
+    
+    return result;
+  };
+
+  const smartTemplates = generateSmartTemplates();
 
   // Fetch ETH price
   const fetchEthPrice = async () => {
@@ -98,6 +232,36 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
     estimateGas();
   }, [amount, gasDetails, ethPrice]);
 
+  // Fetch IDR conversion rate from USD using freeforexapi.com
+  const fetchIdrRate = async () => {
+    try {
+      console.log("🔍 Fetching IDR rate...");
+      
+      // API alternatif yang support CORS
+      const response = await fetch("https://api.fxratesapi.com/latest?base=USD&symbols=IDR");
+      console.log("🔍 IDR API Response status:", response.status);
+      
+      const data = await response.json();
+      console.log("🔍 IDR API Response data:", data);
+      
+      if (data && data.rates && data.rates.IDR) {
+        setIdrRate(data.rates.IDR);
+        console.log("✅ IDR rate set successfully:", data.rates.IDR);
+      } else {
+        console.log("❌ No IDR rate found, using fallback");
+        setIdrRate(16000); // Fallback rate
+      }
+    } catch (error) {
+      console.error("❌ Error fetching IDR rate:", error);
+      console.log("Using fallback IDR rate: 16000");
+      setIdrRate(16000); // Fallback rate
+    }
+  };
+
+  useEffect(() => {
+    fetchIdrRate();
+  }, []);
+
   // Fetch donation history from database
   const fetchDonationHistory = async () => {
     try {
@@ -160,23 +324,47 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
         let gasFeeUsd = '0';
         if (ethPrice && tx.gas_fee) {
           try {
-            // If gas_fee is already in ETH format (string with decimals)
             const gasFeeInEth = typeof tx.gas_fee === 'string' && tx.gas_fee.includes('.')
               ? tx.gas_fee
               : ethers.utils.formatEther(tx.gas_fee.toString());
             
             gasFeeUsd = (parseFloat(gasFeeInEth) * ethPrice).toFixed(2);
+            console.log("🔍 Gas fee USD calculated:", gasFeeUsd);
           } catch (error) {
             console.error("Error converting gas fee to USD:", error);
           }
         }
 
+        // Konversi USD ke IDR jika idrRate tersedia
+        let gasFeeIdr = "";
+        console.log("🔍 IDR conversion check:", {
+          idrRate: idrRate,
+          gasFeeUsd: gasFeeUsd,
+          hasIdrRate: !!idrRate
+        });
+        
+        if (idrRate && parseFloat(gasFeeUsd) > 0) {
+          const idrValue = parseFloat(gasFeeUsd) * idrRate;
+          gasFeeIdr = "Rp." + idrValue.toFixed(0);
+          console.log("✅ IDR conversion successful:", {
+            usd: gasFeeUsd,
+            rate: idrRate,
+            idr: gasFeeIdr
+          });
+        } else {
+          console.log("❌ IDR conversion failed:", {
+            hasIdrRate: !!idrRate,
+            usdValue: gasFeeUsd
+          });
+        }
+        
         return {
           donator: tx.donator_address,
           amount: tx.donation_amount,
           gasFee: {
             eth: tx.gas_fee,
-            usd: `$${gasFeeUsd}`
+            usd: `$${gasFeeUsd}`,
+            idr: gasFeeIdr ? ` / ${gasFeeIdr}` : ""
           },
           timestamp: tx.timestamp
         };
@@ -196,13 +384,13 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
     }
   };
 
-  // Update donation history when ETH price changes or when donate changes
+  // Update donation history when ETH price, donate, or idrRate changes
   useEffect(() => {
     console.log("Donate changed:", donate);
     if (donate && donate.pId) {
       fetchDonationHistory();
     }
-  }, [ethPrice, donate]);
+  }, [ethPrice, donate, idrRate]);
 
   // Clear donations when modal is closed
   const handleCloseModal = () => {
@@ -210,20 +398,50 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
     setOpenModel(false);
   };
 
+  // Helper: add alert with auto-dismiss
+  const addAlert = (message, level = "error", ttl = 5000) => {
+    const id = Date.now() + Math.random().toString(36).slice(2, 7);
+    const alert = { id, level, message };
+    setTransactionAlerts((s) => [...s, alert]);
+    setTimeout(() => {
+      setTransactionAlerts((s) => s.filter(a => a.id !== id));
+    }, ttl);
+  };
+
+  // Convert raw error -> friendly message + level
+  const parseError = (error) => {
+    if (!error) return { message: "Unknown error", level: "error" };
+    // MetaMask user cancel
+    if (error.code === "ACTION_REJECTED" || error.code === 4001) {
+      return { message: "Transaction cancelled by user", level: "warning" };
+    }
+    // Insufficient funds (common provider message)
+    const msg = (error.message || "").toLowerCase();
+    if (msg.includes("insufficient funds") || msg.includes("insufficient balance")) {
+      return { message: "Insufficient funds for gas fee. Please top up and try again.", level: "error" };
+    }
+    // Gas estimation / gas too low / network related
+    if (msg.includes("gas") || msg.includes("transaction failed") || msg.includes("replacement transaction underpriced")) {
+      return { message: error.message || "Transaction failed due to gas / network issue", level: "error" };
+    }
+    // Fallback
+    return { message: error.message || String(error), level: "error" };
+  };
+
   const createDonation = async () => {
     try {
       setIsLoading(true);
+      // reset alerts for new attempt
+      setTransactionAlerts([]);
       const transaction = await donateFunction(donate.pId, amount);
       
       // Wait for transaction to be mined
       const receipt = await transaction.wait();
       
-      // Determine method name based on contract version
       const methodName = donate.contractVersion === 'batch-processing' || donate.contractVersion === 'variable-packing'
         ? 'batchDonate'
         : 'donateToCampaign';
       
-      // Log transaction
       await logTransaction(
         transaction.hash,
         donate.pId,
@@ -234,10 +452,14 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
       setOpenModel(false);
     } catch (error) {
       console.error("Donation error:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      
+      // map and display friendly alert(s)
+      const parsed = parseError(error);
+      addAlert(parsed.message, parsed.level, 7000);
+     } finally {
+       setIsLoading(false);
+     }
+   };
 
   // Rename the logging function to avoid confusion
   const logTransaction = async (txHash, campaignId, amount, method) => {
@@ -405,6 +627,19 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
     }
   };
 
+  const selectedCampaigns = donate.selectedCampaigns || [];
+
+  // Misal snippet ini ditambahkan di bagian render komponen BatchDonate,
+  // tepat setelah daftar campaign atau sebelum tombol submit.
+  const totalEth = selectedCampaigns.reduce((sum, campaignId) => {
+    const amt = parseFloat(amounts[campaignId] || "0");
+    return sum + amt;
+  }, 0);
+
+  const totalUsd = ethPrice ? (totalEth * ethPrice).toFixed(2) : "0.00";
+  const totalIdr = (ethPrice && idrRate) ? (totalEth * ethPrice * idrRate).toFixed(0) : "0";
+
+  // JSX summary
   return (
     <>
       {/* Backdrop */}
@@ -427,28 +662,118 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
           </h2>
           <p className="text-sm text-gray-500 mb-4">{donate.description}</p>
 
-          {/* Input */}
-          <div className="mb-4">
-            <input
-              onChange={(e) => setAmount(e.target.value)}
-              placeholder="Enter Amount to Donate (ETH)"
-              type="number"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={amount}
-            />
-            {/* Badge template */}
-            <div className="flex gap-2 mt-2 flex-wrap">
-              {AMOUNT_TEMPLATES.map((amt) => (
-                <button
-                  key={amt}
-                  type="button"
-                  className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200 text-xs hover:bg-blue-100 focus:outline-none"
-                  onClick={() => setAmount(amt.toString())}
+          {/* Funding Progress Section */}
+          <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-medium text-gray-700">
+                {fundingData.raised.toFixed(4)} ETH / {fundingData.target.toFixed(4)} ETH
+              </span>
+              <span className="text-sm font-semibold text-gray-800">
+                {fundingData.progressPercentage.toFixed(1)}%
+              </span>
+            </div>
+            <div className="text-sm text-gray-600 mb-2">
+              Remaining: {fundingData.remainingNeeded.toFixed(4)} ETH
+            </div>
+            {/* Progress Bar */}
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  fundingData.isFullyFunded ? 'bg-blue-500' : 'bg-green-500'
+                }`}
+                style={{ width: `${fundingData.progressPercentage}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Transaction Alerts (multiple) ditampilkan di bawah progress bar */}
+          {transactionAlerts.length > 0 && (
+            <div className="mb-4 space-y-2">
+              {transactionAlerts.map((a) => (
+                <div
+                  key={a.id}
+                  className={`p-2 rounded-md text-xs ${
+                    a.level === "error" ? "bg-red-100 text-red-700 border border-red-200" :
+                    a.level === "warning" ? "bg-amber-50 text-amber-700 border border-amber-200" :
+                    "bg-blue-50 text-blue-700 border border-blue-100"
+                  }`}
                 >
-                  {amt} ETH
-                </button>
+                  {a.message}
+                </div>
               ))}
             </div>
+          )}
+
+          {/* Input Section */}
+          <div className="mb-4">
+            <div className="relative">
+              <input
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder={fundingData.isFullyFunded ? "Campaign fully funded" : "Enter Amount to Donate (ETH)"}
+                type="number"
+                step="0.0001"
+                max={fundingData.remainingNeeded}
+                disabled={fundingData.isFullyFunded}
+                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                  fundingData.isFullyFunded
+                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed border-gray-300'
+                    : !amountValidation.isValid && amount
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-300 focus:ring-indigo-500'
+                }`}
+                value={amount}
+              />
+              {fundingData.remainingNeeded > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setAmount(fundingData.remainingNeeded.toFixed(4))}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Max
+                </button>
+              )}
+            </div>
+
+            {/* Validation Message */}
+            {!amountValidation.isValid && amount && (
+              <p className="text-red-500 text-xs mt-1 flex items-center">
+                <span className="mr-1">⚠️</span>
+                {amountValidation.message}
+              </p>
+            )}
+
+            {/* Smart Amount Templates */}
+            {!fundingData.isFullyFunded && smartTemplates.length > 0 && (
+              <div className="flex gap-2 mt-2 flex-wrap">
+                {smartTemplates.map((template, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    disabled={!template.isValid}
+                    className={`px-2 py-1 rounded-full border text-xs focus:outline-none transition-all ${
+                      !template.isValid
+                        ? 'bg-gray-100 text-gray-400 border-gray-300 cursor-not-allowed opacity-60'
+                        : template.isExact
+                        ? 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100'
+                        : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
+                    }`}
+                    onClick={() => template.isValid && setAmount(template.amount.toString())}
+                  >
+                    {template.amount} ETH
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Funding Suggestions */}
+            {!fundingData.isFullyFunded && fundingData.remainingNeeded < 0.1 && (
+              <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-md">
+                <p className="text-xs text-amber-800">
+                  💡 This campaign is almost funded! Only {fundingData.remainingNeeded.toFixed(4)} ETH needed to reach the goal.
+                </p>
+              </div>
+            )}
+
             {/* Network Fee with realtime indicator */}
             {maxFee && (
               <div className="mt-2 p-2 bg-blue-50 rounded-md">
@@ -467,10 +792,7 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
           <div className="max-h-40 overflow-y-auto space-y-2">
             <h3 className="text-sm font-medium text-gray-700 mb-2">Transaction History</h3>
             {allDonationData?.map((donation, i) => (
-              <div
-                key={i}
-                className="text-sm text-gray-600 border-b pb-1"
-              >
+              <div key={i} className="text-sm text-gray-600 border-b pb-1">
                 <div>
                   {i + 1}. {donation.amount} ETH -{" "}
                   <span className="text-gray-400">
@@ -478,12 +800,24 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
                     {donation.donator?.slice(-6)}
                   </span>
                   <div className="text-xs text-gray-500">
-                    Gas: {donation.gasFee.eth} ETH ({donation.gasFee.usd})
+                    Gas: {donation.gasFee.eth} ETH ({donation.gasFee.usd}{donation.gasFee.idr})
                   </div>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Summary Section for BatchDonate */}
+          {donate.contractVersion === 'batch-processing' && (
+            <div className="mt-4 p-4 border-t">
+              <div className="flex justify-between items-center text-sm">
+                <p>Selected: {selectedCampaigns.length} campaign(s)</p>
+                <p>
+                  Total: {totalEth.toFixed(4)} ETH (~${totalUsd} / Rp.{totalIdr})
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Footer */}
           <div className="flex justify-end mt-6 gap-3">
@@ -496,14 +830,20 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
             </button>
             <button
               onClick={createDonation}
-              disabled={isLoading || !amount || isNaN(amount) || parseFloat(amount) <= 0}
+              disabled={
+                isLoading || 
+                !amount || 
+                !amountValidation.isValid || 
+                fundingData.isFullyFunded
+              }
               className={`px-4 py-2 rounded-md text-white ${
-                isLoading || !amount || isNaN(amount) || parseFloat(amount) <= 0
+                isLoading || !amount || !amountValidation.isValid || fundingData.isFullyFunded
                   ? 'bg-indigo-400 cursor-not-allowed' 
                   : 'bg-indigo-600 hover:bg-indigo-700'
               }`}
             >
-              {isLoading ? 'Processing...' : 'Donate Now'}
+              {isLoading ? 'Processing...' : 
+               fundingData.isFullyFunded ? 'Fully Funded' : 'Donate Now'}
             </button>
           </div>
         </div>

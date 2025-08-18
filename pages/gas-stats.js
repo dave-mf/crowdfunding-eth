@@ -14,6 +14,7 @@ const GasStats = () => {
   });
   const [transactions, setTransactions] = useState([]);
   const [ethPrice, setEthPrice] = useState(null);
+  const [idrRate, setIdrRate] = useState(null);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('all');
   const [selectedVersion, setSelectedVersion] = useState('all');
@@ -36,6 +37,27 @@ const GasStats = () => {
     fetchEthPrice();
     const interval = setInterval(fetchEthPrice, 5 * 60 * 1000); // Update every 5 minutes
     return () => clearInterval(interval);
+  }, []);
+
+  // Fetch IDR rate dari API
+  useEffect(() => {
+    const fetchIdrRate = async () => {
+      try {
+        const response = await fetch("https://api.exchangerate-api.com/v4/latest/USD");
+        const data = await response.json();
+        if (data && data.rates && data.rates.IDR) {
+          setIdrRate(data.rates.IDR);
+          console.log("✅ IDR rate set successfully:", data.rates.IDR);
+        } else {
+          console.log("❌ No IDR rate found, using fallback");
+          setIdrRate(16000);
+        }
+      } catch (error) {
+        console.error("❌ Error fetching IDR rate:", error);
+        setIdrRate(16000);
+      }
+    };
+    fetchIdrRate();
   }, []);
 
   // Fetch gas fee stats
@@ -159,6 +181,24 @@ const GasStats = () => {
     }
   };
 
+  // Format gas fee to IDR
+  const formatGasFeeIDR = (fee) => {
+    if (!fee || !ethPrice || !idrRate) return 'Rp0';
+    try {
+      const feeInEth =
+        typeof fee === 'string' && fee.includes('.') 
+          ? fee 
+          : ethers.utils.formatEther(fee.toString());
+      const ethAmount = parseFloat(feeInEth);
+      const usdValue = ethAmount * ethPrice;
+      const idrValue = usdValue * idrRate;
+      return `Rp.${idrValue.toFixed(0)}`;
+    } catch (error) {
+      console.error('Error formatting gas fee to IDR:', error);
+      return 'Rp0';
+    }
+  };
+
   // Format date
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleString();
@@ -205,6 +245,10 @@ const GasStats = () => {
                     <span className="text-gray-600">Total Gas Fee (USD)</span>
                     <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.original?.[0]?.total_gas_fee)}</span>
                   </div>
+                  <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
+                    <span className="text-gray-600">Total Gas Fee (IDR)</span>
+                    <span className="font-medium text-gray-900">{formatGasFeeIDR(stats.original?.[0]?.total_gas_fee)}</span>
+                  </div>
                 </div>
               </div>
 
@@ -234,6 +278,10 @@ const GasStats = () => {
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Gas Fee (USD)</span>
                     <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.optimized?.[0]?.total_gas_fee)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
+                    <span className="text-gray-600">Total Gas Fee (IDR)</span>
+                    <span className="font-medium text-gray-900">{formatGasFeeIDR(stats.optimized?.[0]?.total_gas_fee)}</span>
                   </div>
                   <div className="p-3 bg-green-50 rounded-lg border border-green-100">
                     <div className="flex justify-between items-center">
@@ -273,6 +321,10 @@ const GasStats = () => {
                     <span className="text-gray-600">Total Gas Fee (USD)</span>
                     <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.variablePacking?.[0]?.total_gas_fee)}</span>
                   </div>
+                  <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
+                    <span className="text-gray-600">Total Gas Fee (IDR)</span>
+                    <span className="font-medium text-gray-900">{formatGasFeeIDR(stats.variablePacking?.[0]?.total_gas_fee)}</span>
+                  </div>
                   <div className="p-3 bg-purple-50 rounded-lg border border-purple-100">
                     <div className="flex justify-between items-center">
                       <span className="text-purple-700 font-medium">Savings</span>
@@ -310,6 +362,10 @@ const GasStats = () => {
                   <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
                     <span className="text-gray-600">Total Gas Fee (USD)</span>
                     <span className="font-medium text-gray-900">{formatGasFeeUSD(stats.batchProcessing?.[0]?.total_gas_fee)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-white rounded-lg shadow-sm">
+                    <span className="text-gray-600">Total Gas Fee (IDR)</span>
+                    <span className="font-medium text-gray-900">{formatGasFeeIDR(stats.batchProcessing?.[0]?.total_gas_fee)}</span>
                   </div>
                   <div className="p-3 bg-orange-50 rounded-lg border border-orange-100">
                     <div className="flex justify-between items-center">
@@ -379,6 +435,8 @@ const GasStats = () => {
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Contract Version</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gas Fee</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Gas Fee (USD)</th>
+                        {/* Tambahkan header baru untuk IDR */}
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Gas Fee (IDR)</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                       </tr>
@@ -396,6 +454,8 @@ const GasStats = () => {
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">{tx.contract_version}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatGasFee(tx.gas_fee)}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">{formatGasFeeUSD(tx.gas_fee)}</td>
+                            {/* Kolom Gas Fee (IDR) */}
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 hidden lg:table-cell">{formatGasFeeIDR(tx.gas_fee)}</td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm">
                               <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                 tx.is_success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -447,6 +507,10 @@ const GasStats = () => {
                           <div>
                             <span className="text-gray-500 text-xs">USD:</span>
                             <p className="text-gray-900 font-medium">{formatGasFeeUSD(tx.gas_fee)}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 text-xs">IDR:</span>
+                            <p className="text-gray-900 font-medium">{formatGasFeeIDR(tx.gas_fee)}</p>
                           </div>
                         </div>
                         
