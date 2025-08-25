@@ -13,24 +13,25 @@ import unoptimizedABI from "./unoptimized.json";
 
 export const CONTRACTS = {
     "original": {
-      address: "0x27832a624c29dfbe6e9be78bedfe9ad38714b596",
+      address: "0xF464099bdf7F9006Ea23eF0Ec3251461c56Ef869",
       abi: unoptimizedABI,
       name: "Original"
     },
     "variable-packing": {
-      address: "0xd497DE106Bb8878A8E079F3b99F05Da55f16Ce57",
+      address: "0xCc9d302c84a6c16dE17Adb3e234AbA1095562f51",
       abi: packingOnlyABI,
       name: "Variable Packing"
     },
     "batch-processing": {
-      address: "0xbD76b9fe30E2E0A786367CF5f9b49F6E38396176",
+      address: "0x558fAa5b8409259bd529eeF1C5eC04c5610B264F",
       abi: batchOnlyABI,
       name: "Batch Processing"
     },
     "optimized": {
-      address: "0xb74f2fd48f0f07057e341f247750c9998acd35bf",
+      address: "0xbF1A86A123B9387AB944648B59a870F0178E3dC0",
       abi: optimizedABI,
       name: "Optimized"
     }
   };
 
+// optimized 0xb74f2fd48f0f07057e341f247750c9998acd35bf

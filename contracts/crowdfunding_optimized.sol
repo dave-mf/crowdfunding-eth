@@ -36,11 +36,32 @@ contract CrowdFundingOptimized {
 
     function donateToCampaign(uint256 _id) public payable {
         Campaign storage campaign = campaigns[_id];
+        require(block.timestamp < campaign.deadline, "Campaign expired");
+        require(msg.value > 0, "No ETH sent");
+        require(campaign.amountCollected < campaign.target, "Campaign already funded");
+
+        uint128 remaining = campaign.target - campaign.amountCollected;
+        uint128 accepted = uint128(msg.value);
+        uint128 refund = 0;
+
+        if (accepted > remaining) {
+            accepted = remaining;
+            refund = uint128(msg.value) - remaining;
+        }
+
         campaign.donators.push(msg.sender);
-        campaign.donations.push(msg.value);
-        campaign.amountCollected += uint128(msg.value);
-        (bool sent, ) = payable(campaign.owner).call{value: msg.value}("");
+        campaign.donations.push(accepted);
+        campaign.amountCollected += accepted;
+
+        // Kirim ETH ke owner sesuai accepted
+        (bool sent, ) = payable(campaign.owner).call{value: accepted}("");
         require(sent, "Failed to send ETH");
+
+        // Refund kelebihan jika ada
+        if (refund > 0) {
+            (bool refundSent, ) = payable(msg.sender).call{value: refund}("");
+            require(refundSent, "Refund failed");
+        }
     }
 
     function batchDonate(uint256[] calldata _ids, uint256[] calldata _amounts) external payable {
@@ -53,11 +74,30 @@ contract CrowdFundingOptimized {
 
         for (uint256 i = 0; i < _ids.length; i++) {
             Campaign storage campaign = campaigns[_ids[i]];
+            require(block.timestamp < campaign.deadline, "Campaign expired");
+            require(campaign.amountCollected < campaign.target, "Campaign already funded");
+
+            uint128 remaining = campaign.target - campaign.amountCollected;
+            uint128 accepted = uint128(_amounts[i]);
+            uint128 refund = 0;
+
+            if (accepted > remaining) {
+                accepted = remaining;
+                refund = uint128(_amounts[i]) - remaining;
+            }
+
             campaign.donators.push(msg.sender);
-            campaign.donations.push(_amounts[i]);
-            campaign.amountCollected += uint128(_amounts[i]);
-            (bool sent, ) = payable(campaign.owner).call{value: _amounts[i]}("");
+            campaign.donations.push(accepted);
+            campaign.amountCollected += accepted;
+
+            (bool sent, ) = payable(campaign.owner).call{value: accepted}("");
             require(sent, "Failed to send ETH");
+
+            // Refund kelebihan jika ada (langsung ke user)
+            if (refund > 0) {
+                (bool refundSent, ) = payable(msg.sender).call{value: refund}("");
+                require(refundSent, "Refund failed");
+            }
         }
     }
 

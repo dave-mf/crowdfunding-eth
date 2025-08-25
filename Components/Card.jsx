@@ -78,9 +78,11 @@ const Card = ({ allcampaign, setOpenModel, setDonate, title }) => {
               onClick={() =>
                 !isFundingComplete && handleDonate(campaign)
               }
-              className={`cursor-pointer bg-white border shadow-sm rounded-2xl p-4 transition duration-300 hover:shadow-md ${
-                isFundingComplete ? "pointer-events-none opacity-90" : ""
-              }`}
+              className={`cursor-pointer border shadow-sm rounded-2xl p-4 transition duration-300 hover:shadow-md
+                ${isFundingComplete
+                  ? "pointer-events-none opacity-90 bg-gray-100"
+                  : "bg-white"}
+              `}
             >
               {/* Badge "Crowdfunding Berhasil 🎉" telah dihapus */}
 

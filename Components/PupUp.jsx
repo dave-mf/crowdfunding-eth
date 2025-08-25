@@ -415,13 +415,25 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
     if (error.code === "ACTION_REJECTED" || error.code === 4001) {
       return { message: "Transaction cancelled by user", level: "warning" };
     }
-    // Insufficient funds (common provider message)
     const msg = (error.message || "").toLowerCase();
     if (msg.includes("insufficient funds") || msg.includes("insufficient balance")) {
       return { message: "Insufficient funds for gas fee. Please top up and try again.", level: "error" };
     }
-    // Gas estimation / gas too low / network related
-    if (msg.includes("gas") || msg.includes("transaction failed") || msg.includes("replacement transaction underpriced")) {
+    if (msg.includes("already funded") || msg.includes("fully funded")) {
+      return { message: "Transaksi gagal: campaign sudah fully funded atau donasi melebihi target. Silakan cek status campaign.", level: "error" };
+    }
+    if (msg.includes("exceeds target")) {
+      return { message: "Transaksi gagal: donasi melebihi sisa target campaign.", level: "error" };
+    }
+    if (
+      msg.includes("call_exception") ||
+      msg.includes("transaction failed") ||
+      msg.includes("status 0") ||
+      msg.includes("execution reverted")
+    ) {
+      return { message: "Transaksi gagal di blockchain. Kemungkinan campaign sudah fully funded, expired, atau donasi melebihi target. Silakan cek status campaign dan coba lagi.", level: "error" };
+    }
+    if (msg.includes("gas") || msg.includes("replacement transaction underpriced")) {
       return { message: error.message || "Transaction failed due to gas / network issue", level: "error" };
     }
     // Fallback
@@ -452,13 +464,22 @@ const PupUp = ({ setOpenModel, donate, donateFunction, getDonations, getCampaign
       setOpenModel(false);
     } catch (error) {
       console.error("Donation error:", error);
-      
-      // map and display friendly alert(s)
       const parsed = parseError(error);
       addAlert(parsed.message, parsed.level, 7000);
-     } finally {
-       setIsLoading(false);
-     }
+
+      // Jika error fully funded, auto reload setelah 2 detik
+      if (
+        parsed.message.includes("fully funded") ||
+        parsed.message.includes("melebihi target") ||
+        parsed.message.includes("gagal di blockchain")
+      ) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 5000);
+      }
+    } finally {
+      setIsLoading(false);
+    }
    };
 
   // Rename the logging function to avoid confusion

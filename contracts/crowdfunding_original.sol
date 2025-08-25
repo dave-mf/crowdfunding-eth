@@ -11,16 +11,25 @@ contract CrowdFunding {
         uint256 amountCollected;
         address[] donators;
         uint256[] donations;
+        uint256 dummyCounter;
     }
 
     mapping(uint256 => Campaign) public campaigns;
-
     uint256 public numberOfCampaigns = 0;
 
-    function createCampaign(address _owner, string memory _title, string memory _description, uint256 _target, uint256 _deadline) public returns (uint256) {
+    event DonationReceived(uint256 indexed campaignId, address indexed donator, uint256 amount);
+    event Refund(address indexed donator, uint256 amount);
+
+    function createCampaign(
+        address _owner,
+        string memory _title,
+        string memory _description,
+        uint256 _target,
+        uint256 _deadline
+    ) public returns (uint256) {
         Campaign storage campaign = campaigns[numberOfCampaigns];
 
-        require(campaign.deadline < block.timestamp, "The deadline shoul be a date in the future!");
+        require(_deadline > block.timestamp, "The deadline should be a date in the future!");
 
         campaign.owner = _owner;
         campaign.title = _title;
@@ -28,6 +37,7 @@ contract CrowdFunding {
         campaign.target = _target;
         campaign.deadline = _deadline;
         campaign.amountCollected = 0;
+        campaign.dummyCounter = 0;
 
         numberOfCampaigns++;
 
@@ -35,18 +45,38 @@ contract CrowdFunding {
     }
 
     function donateToCampaign(uint256 _id) public payable {
-        uint256 amount = msg.value;
-
         Campaign storage campaign = campaigns[_id];
+        require(block.timestamp < campaign.deadline, "Campaign expired");
+        require(msg.value > 0, "No ETH sent");
+        require(campaign.amountCollected < campaign.target, "Campaign already funded");
+
+        uint256 remaining = campaign.target - campaign.amountCollected;
+        uint256 accepted = msg.value;
+        uint256 refund = 0;
+
+        if (accepted > remaining) {
+            accepted = remaining;
+            refund = msg.value - remaining;
+        }
 
         campaign.donators.push(msg.sender);
-        campaign.donations.push(amount);
+        campaign.donations.push(accepted);
+        campaign.dummyCounter += 1;
 
-        (bool sent,) = payable(campaign.owner).call{value: amount}("");
+        // Transfer accepted amount to owner
+        (bool sent, ) = payable(campaign.owner).call{value: accepted}("");
+        require(sent, "Failed to send ETH");
 
-        if(sent) {
-            campaign.amountCollected = campaign.amountCollected + amount;
+        campaign.amountCollected += accepted;
+
+        // Refund excess if any
+        if (refund > 0) {
+            (bool refundSent, ) = payable(msg.sender).call{value: refund}("");
+            require(refundSent, "Refund failed");
+            emit Refund(msg.sender, refund);
         }
+
+        emit DonationReceived(_id, msg.sender, accepted);
     }
 
     function getDonators(uint256 _id) view public returns (address[] memory, uint256[] memory) {
@@ -58,11 +88,9 @@ contract CrowdFunding {
 
         for (uint256 i = 0; i < numberOfCampaigns; i++) {
             Campaign storage item = campaigns[i];
-
             allCampaigns[i] = item;
         }
 
         return allCampaigns;
     }
 }
-
